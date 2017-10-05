@@ -56,32 +56,10 @@ AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_lfile.
 
   READ TABLE wit_file_table INTO p_lfile INDEX 1.
 
-
-
-
-*at selection-screen on value-request for p_spath.
-*
-*  call function '/SAPDMC/LSM_F4_SERVER_FILE'
-*    EXPORTING
-*      DIRECTORY              = ''
-**     FILEMASK               = ' '
-*    IMPORTING
-*      SERVERFILE             = p_sfile
-**   EXCEPTIONS
-**     CANCELED_BY_USER       = 1
-**     OTHERS                 = 2
-*            .
-*  if sy-subrc <> 0.
-** MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
-**         WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
-*  endif.
-
 *&------------------------------------------------------------------------------------------------------------------------------------------*
-
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_locrep.
   PERFORM get_locrep.
-
 
 * Screen refresh after radiobutton update
 AT SELECTION-SCREEN OUTPUT.
@@ -91,7 +69,6 @@ AT SELECTION-SCREEN OUTPUT.
       p_sfile = 'ZZ_U580_MIG_SD'.     " AMB (change pour SD)
     ENDIF.
   ENDIF.
-
 
 * Récupération du nom de fichier
   DATA: lv_complete_filename TYPE string.
@@ -134,7 +111,6 @@ AT SELECTION-SCREEN OUTPUT.
     IF sy-subrc IS INITIAL.
       CONCATENATE '(' p_dsname ')' INTO p_dsname.
     ENDIF.
-
   ENDIF.
 
 *&------------------------------------------------------------------------------------------------------------------------------------------*
@@ -174,31 +150,26 @@ START-OF-SELECTION.
     ENDIF.
 
 * Upload front-end file to SAP Application server in binary mode
-
     IF p_upl = 'X' AND p_ftype = 'BIN'.
       PERFORM f_upload_bin USING ws_ftappl.
     ENDIF.
 
 * Download SAP Application server file to front-end in binary mode
-
     IF p_downl = 'X' AND p_ftype = 'BIN'.
       PERFORM f_download_bin USING ws_ftappl.
     ENDIF.
 
 * Upload front-end file to SAP Application server in ASCII mode
-
     IF p_upl = 'X' AND p_ftype = 'ASC'.
       PERFORM f_upload_asc USING ws_ftappl.
     ENDIF.
 
 * Download SAP Application server file to front-end in ASCII mode
-
     IF p_downl = 'X' AND p_ftype = 'ASC'.
       PERFORM f_download_asc USING ws_ftappl.
     ENDIF.
 
 * List of file in Directory Unix
-
     IF p_flist = 'X'.
       PERFORM f_list_dir_files USING ws_ftappl.
     ENDIF.
@@ -206,8 +177,4 @@ START-OF-SELECTION.
     IF p_multi = 'X'.
       PERFORM f_download_mult.
     ENDIF.
-
   ENDIF.
-
-* End of report
-*&------------------------------------------------------------------------------------------------------------------------------------------*
