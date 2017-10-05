@@ -9,16 +9,16 @@
 *&
 *& Linked with transaction ZCG3
 *
-* Author        : T.GOURDIN EX011958 AKKA
+* Author        : Thierry
 * Creation Date : 21/03/2016
 ************************************************************************
 *    Updates
 ************************************************************************
 * WHO         * DD/MM/YYYY * Reason
 ************************************************************************
-* T.GOURDIN   * 21/03/2016 * Creation
-* AM BRISARD  * 14/11/2016 * Modification (search AMB)
-* EX011955    * 31/01/2017 * Multi-file download
+* Thierry     * 21/03/2016 * Creation
+* Anne-Marie  * 14/11/2016 * Modification (search AMB)
+* Julien      * 31/01/2017 * Multi-file download
 ************************************************************************
 
 REPORT  zpu580migfile.
@@ -93,7 +93,7 @@ AT SELECTION-SCREEN OUTPUT.
   ENDIF.
 
 
-* Récupération du nom de fichier
+* RÃ©cupÃ©ration du nom de fichier
   DATA: lv_complete_filename TYPE string.
   DATA: lv_filename          TYPE string.
   DATA: lv_filename_noext    TYPE string.
