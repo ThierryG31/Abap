@@ -1,5 +1,4 @@
-PROGRAM zpu580_prog_download.
-*program zdown.
+PROGRAM zdown.
 *=======================================================================
 *  Direct Download 46cd version 1.3.2 release.
 *
