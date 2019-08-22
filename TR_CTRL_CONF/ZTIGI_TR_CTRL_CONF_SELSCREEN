@@ -1,0 +1,379 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTIGI_TR_CTRL_CONF_SELSCREEN
+*&---------------------------------------------------------------------*
+
+***********************************************************************
+*         SELECTION SCREEN
+***********************************************************************
+
+**********************************************
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-ss1.
+**********************************************
+* Order
+SELECT-OPTIONS r_order FOR e070-trkorr NO INTERVALS.
+
+* Creation Date
+SELECT-OPTIONS r_date FOR e070-as4date.
+
+* Client
+SELECT-OPTIONS r_client FOR e070v-client NO INTERVALS.
+
+* Owner
+SELECT-OPTIONS r_owner FOR e070v-as4user NO INTERVALS.
+*PARAMETER p_owner LIKE e070v-as4user.
+
+SELECT-OPTIONS r_cts FOR e070v-as4user NO INTERVALS
+              MATCHCODE OBJECT cts_changeable_projects.
+* End of V2.0
+
+* Begin of V2.1
+* SP Number
+SELECT-OPTIONS r_sp_num FOR e070a-reference NO INTERVALS.
+* QC number
+SELECT-OPTIONS r_qc_num FOR e070a-reference NO INTERVALS.
+* En of V2.1
+
+* ChaRM change
+SELECT-OPTIONS s_charm FOR w_charm_ch NO INTERVALS.     "ChaRM
+
+* Project
+SELECT-OPTIONS r_projet FOR w_projet NO INTERVALS.
+SELECTION-SCREEN END OF BLOCK b1.
+
+* Object search
+
+SELECTION-SCREEN BEGIN OF BLOCK b01.
+*===================================
+SELECTION-SCREEN BEGIN OF LINE.
+*PARAMETERS checka LIKE sctsobject-checkbox  USER-COMMAND setcursor.
+***SELECTION-SCREEN COMMENT 1(30) text-021 FOR FIELD pgmida.
+***SELECTION-SCREEN POSITION 33.
+PARAMETERS pgmida   TYPE sctsobject-pgmid NO-DISPLAY
+ MODIF ID out.
+PARAMETERS objecta  TYPE sctsobject-object NO-DISPLAY
+ MODIF ID obj.
+***SELECTION-SCREEN POSITION 43.
+PARAMETERS objtexta TYPE sctsobject-text VISIBLE LENGTH 19 NO-DISPLAY
+                    LOWER CASE
+                    MODIF ID out.
+SELECTION-SCREEN END OF LINE.
+SELECTION-SCREEN BEGIN OF LINE.
+***SELECTION-SCREEN POSITION 33.
+
+PARAMETERS objnamea(120) TYPE c MODIF ID obj NO-DISPLAY.
+PARAMETERS only_ca  TYPE sctsobject-only_compl NO-DISPLAY DEFAULT 'X'.
+SELECTION-SCREEN END OF LINE.
+SELECTION-SCREEN END OF BLOCK b01.
+
+*<-- Begin V2.2 --
+SELECTION-SCREEN BEGIN OF BLOCK b11 WITH FRAME TITLE text-ss2.
+*============================================================
+SELECTION-SCREEN BEGIN OF LINE.
+PARAMETER p_lktr AS CHECKBOX.  "Select linked transport req.
+SELECTION-SCREEN COMMENT (20) FOR FIELD p_lktr.
+SELECTION-SCREEN POSITION POS_LOW.
+SELECT-OPTIONS s_lktrob FOR e071-object NO INTERVALS.
+SELECTION-SCREEN END OF LINE.
+SELECTION-SCREEN END OF BLOCK b11.
+*--  End   V2.2 -->
+
+* Type
+SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE text-ss3.
+*============================================================
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT 1(15) text-ss5 FOR FIELD p_workb.
+SELECTION-SCREEN POSITION 17.
+PARAMETER p_workb AS CHECKBOX DEFAULT 'X'.
+
+SELECTION-SCREEN COMMENT 27(15) text-ss7 FOR FIELD p_copy.
+SELECTION-SCREEN POSITION 43.
+PARAMETER p_copy AS CHECKBOX DEFAULT ' '.
+
+SELECTION-SCREEN COMMENT 53(15) text-ssr FOR FIELD p_repai.
+SELECTION-SCREEN POSITION 69.
+PARAMETER p_repai AS CHECKBOX DEFAULT ' '.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT 1(15) text-ss6 FOR FIELD p_custo.
+SELECTION-SCREEN POSITION 17.
+PARAMETER p_custo AS CHECKBOX DEFAULT 'X'.
+
+SELECTION-SCREEN COMMENT 27(15) text-ss9 FOR FIELD p_corr.
+SELECTION-SCREEN POSITION 43.
+PARAMETER p_corr AS CHECKBOX DEFAULT ' '.
+
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT 1(15) text-ssd FOR FIELD p_buff.
+SELECTION-SCREEN POSITION 17.
+PARAMETER p_buff AS CHECKBOX DEFAULT 'X'.
+
+SELECTION-SCREEN COMMENT 27(15) text-ssl FOR FIELD p_wt_log.
+SELECTION-SCREEN POSITION 43.
+PARAMETER p_wt_log AS CHECKBOX DEFAULT ' '.
+
+SELECTION-SCREEN END OF LINE.
+
+
+SELECTION-SCREEN END OF BLOCK b2.
+
+
+* Environnement actuel
+
+SELECTION-SCREEN BEGIN OF BLOCK b3 WITH FRAME TITLE text-ss4.
+*============================================================
+
+SELECTION-SCREEN BEGIN OF LINE.
+*------------------------------
+SELECTION-SCREEN COMMENT 1(15) com_dev FOR FIELD p_sdev.
+SELECTION-SCREEN POSITION 17.
+PARAMETER p_sdev AS CHECKBOX DEFAULT 'X'.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN BEGIN OF LINE.
+*----------------------------
+SELECTION-SCREEN COMMENT 1(15) com_int FOR FIELD p_int.
+SELECTION-SCREEN POSITION 17.
+PARAMETER p_int AS CHECKBOX DEFAULT 'X'.
+SELECTION-SCREEN END OF LINE.
+
+* Begin of V2.0
+SELECTION-SCREEN BEGIN OF LINE.
+*-----------------------------
+SELECTION-SCREEN COMMENT 1(15) com_ppr FOR FIELD p_ppr.
+SELECTION-SCREEN POSITION 17.
+PARAMETER p_ppr AS CHECKBOX DEFAULT 'X'.
+SELECTION-SCREEN END OF LINE.
+* End of V2.0
+
+SELECTION-SCREEN BEGIN OF LINE.
+*-----------------------------
+SELECTION-SCREEN COMMENT 1(15) com_prd FOR FIELD p_prd.
+SELECTION-SCREEN POSITION 17.
+PARAMETER p_prd AS CHECKBOX DEFAULT 'X'.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN END OF BLOCK b3.
+
+
+* Dates de transport
+
+SELECTION-SCREEN BEGIN OF BLOCK b4 WITH FRAME TITLE text-ss8.
+*============================================================
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT 1(20) com_intd FOR FIELD p_intdat.
+SELECTION-SCREEN POSITION 21.
+SELECT-OPTIONS p_intdat FOR tstrfcofil-trdate.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT 1(20) com_pprd FOR FIELD p_pprdat.
+SELECTION-SCREEN POSITION 21.
+SELECT-OPTIONS p_pprdat FOR tstrfcofil-trdate.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT 1(20) com_prdd FOR FIELD p_prddat.
+SELECTION-SCREEN POSITION 21.
+SELECT-OPTIONS p_prddat FOR tstrfcofil-trdate.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN END OF BLOCK b4.
+*
+** Max display
+*
+*PARAMETER p_max LIKE rseumod-tbmaxsel DEFAULT 9999.
+*
+
+*&--------------------------------------------------------------------
+*&      Form  init_select_options
+*&--------------------------------------------------------------------
+*       text
+*---------------------------------------------------------------------
+*  -->  p1        text
+*  <--  p2        text
+*---------------------------------------------------------------------
+FORM init_select_options.
+  r_date-sign = 'I'.
+  r_date-option = 'GE'.
+***  r_date-low = sy-datum - 730.
+  r_date-low = sy-datum.
+  r_date-low+4(4) = '0101'.
+  APPEND r_date.
+
+* Begin of V2.0 -
+  r_owner-sign = 'I'.
+  r_owner-option = 'EQ'.
+  r_owner-low = sy-uname.
+  APPEND r_owner.
+* End of V2.0 -
+
+ENDFORM.                    " init_select_options
+
+AT SELECTION-SCREEN OUTPUT.
+
+*  PERFORM select_request_type           USING ' '.
+***  PERFORM at_selection_screen_output.
+
+  DATA: BEGIN OF lt_excl_okcode OCCURS 0,
+            okcode LIKE sy-ucomm,
+        END   OF lt_excl_okcode.
+
+* exclude some functions in the menu
+  lt_excl_okcode-okcode = 'PRIN'.
+  APPEND lt_excl_okcode.
+  lt_excl_okcode-okcode = 'SJOB'.
+  APPEND lt_excl_okcode.
+
+  CALL FUNCTION 'RS_SET_SELSCREEN_STATUS'
+    EXPORTING
+      p_status  = sy-pfkey
+    TABLES
+      p_exclude = lt_excl_okcode.
+
+  LOOP AT SCREEN.
+    CASE screen-group1.
+      WHEN 'OUT'.
+        screen-input      = '0'.
+        IF screen-name = 'OBJTEXTA'.
+          screen-display_3d = '0'.
+        ENDIF.
+        MODIFY SCREEN.
+      WHEN 'OBJ'.
+        IF NOT r_order-low IS INITIAL OR
+           NOT r_client-low IS INITIAL OR
+           NOT r_owner-low IS INITIAL OR
+           NOT r_projet-low IS INITIAL.
+
+          screen-input      = '0'.
+          MODIFY SCREEN.
+        ELSE.
+          screen-input      = '1'.
+          MODIFY SCREEN.
+
+        ENDIF.
+      WHEN 'TR'.
+        IF NOT objecta IS INITIAL OR NOT objnamea IS INITIAL.
+          screen-input      = '0'.
+          MODIFY SCREEN.
+        ELSE.
+          screen-input      = '1'.
+          MODIFY SCREEN.
+        ENDIF.
+    ENDCASE.
+  ENDLOOP.
+
+*  IF gv_objectfield IS NOT INITIAL.
+*    SET CURSOR FIELD gv_objectfield.
+*    CLEAR gv_objectfield.
+*  ENDIF.
+
+  com_dev = c_dev.
+  com_int = c_int.
+  com_ppr = c_ppr.
+  com_prd = c_prd.
+
+  CONCATENATE c_int ' Transport dates' INTO com_intd.
+  CONCATENATE c_ppr ' Transport dates' INTO com_pprd.
+  CONCATENATE c_prd ' Transport dates' INTO com_prdd.
+
+AT SELECTION-SCREEN ON objecta.
+  PERFORM at_selection_screen_on_field    USING 'OBJECTA'.
+
+AT SELECTION-SCREEN.
+
+*&--------------------------------------------------------------------
+*&      Form  AT_SELECTION_SCREEN_ON_FIELD
+*&--------------------------------------------------------------------
+FORM at_selection_screen_on_field      USING pv_field TYPE c.
+
+  DATA: ls_object_text       LIKE ko100.
+
+  CASE pv_field.
+    WHEN 'OBJECTA'.
+      CASE objecta.
+        WHEN space. CLEAR: pgmida, objtexta, objnamea.
+        WHEN '*'. pgmida = '*'.
+        WHEN OTHERS.
+          READ TABLE gt_object_texts INTO ls_object_text
+                                   WITH KEY object = objecta.
+          IF sy-subrc <> 0.
+            MESSAGE e870(tk).
+*           Bitte wÃ¤hlen Sie einen gÃ¼ltigen Objekttyp aus
+          ELSE.
+            pgmida   = ls_object_text-pgmid.
+            objtexta = ls_object_text-text.
+          ENDIF.
+      ENDCASE.
+
+
+  ENDCASE.
+ENDFORM.                               " AT_SELECTION_SCREEN_ON_FIELD
+
+*&--------------------------------------------------------------------*
+*&      Form  F_LIMIT_SELECTOPTION
+*&--------------------------------------------------------------------*
+*   Personnalisation of select-option
+*---------------------------------------------------------------------*
+FORM f_limit_selectoption .
+  TYPE-POOLS : sscr.
+
+* Define the object to be passed to the RESTRICTION parameter
+  DATA : restrict TYPE sscr_restrict,
+* Auxiliary objects for filling RESTRICT
+        opt_list TYPE sscr_opt_list,
+        ass      TYPE sscr_ass.
+
+* NOINTERVLS: BT and NB not allowed
+  CLEAR opt_list.
+  MOVE 'ONLY_EQUAL_LIST' TO opt_list-name.
+  MOVE abap_true TO: opt_list-options-eq.
+
+  APPEND opt_list TO restrict-opt_list_tab.
+
+* Limitation de la recherche du poste de travail sans intervalle.
+* On enève aussi la possibilité des CP
+  CLEAR ass.
+  MOVE: 'S'          TO ass-kind,
+        'S_CHARM'    TO ass-name,
+        'I'          TO ass-sg_main,
+        ' '          TO ass-sg_addy,
+        'ONLY_EQUAL_LIST' TO ass-op_main,
+        'ONLY_EQUAL_LIST' TO ass-op_addy.
+  APPEND ass TO restrict-ass_tab.
+
+  CLEAR ass.
+  MOVE: 'S'          TO ass-kind,
+        'R_QC_NUM'   TO ass-name,
+        'I'          TO ass-sg_main,
+        ' '          TO ass-sg_addy,
+        'ONLY_EQUAL_LIST' TO ass-op_main,
+        'ONLY_EQUAL_LIST' TO ass-op_addy.
+  APPEND ass TO restrict-ass_tab.
+
+* Call function module
+  CALL FUNCTION 'SELECT_OPTIONS_RESTRICT'
+    EXPORTING
+      restriction            = restrict
+    EXCEPTIONS
+      too_late               = 1
+      repeated               = 2
+      selopt_without_options = 3
+      selopt_without_signs   = 4
+      invalid_sign           = 5
+      empty_option_list      = 6
+      invalid_kind           = 7
+      repeated_kind_a        = 8
+      OTHERS                 = 9.
+
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+    WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+ENDFORM.                    " F_LIMIT_SELECTOPTION
+*-- ChaRM -->

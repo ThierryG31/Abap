@@ -1,0 +1,109 @@
+*&---------------------------------------------------------------------*
+*& Report  ZTIGI_TR_CTRL_CONF
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ztigi_tr_ctrl_conf.
+*---------------------------------------------------------------------*
+* CHANGE HISTORY
+*---------------------------------------------------------------------*
+*  DATE      | NAME    |  DESCRIPTION                      | Reference
+*---------------------------------------------------------------------*
+* DD.MON.YYYY| Tx99999 | Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   |XYZDDMMMYY
+*            |         | xxxxxxxxxxxxxxxxxxxxxxxxxx        |
+*---------------------------------------------------------------------*
+*---------------------------------------------------------------------*
+
+
+***********************************************************************
+*         Declarations
+***********************************************************************
+INCLUDE ztigi_tr_ctrl_conf_data.
+
+***********************************************************************
+*         SELECTION SCREEN
+***********************************************************************
+INCLUDE ztigi_tr_ctrl_conf_selscreen.
+
+**********************************************************************
+*        INITIALIZATION                                              *
+**********************************************************************
+INITIALIZATION.
+
+  PERFORM init_select_options.
+
+  PERFORM read_object_table     TABLES gt_object_texts.
+
+**********************************************************************
+*           MAIN PROCEDURE                                           *
+**********************************************************************
+START-OF-SELECTION.
+
+*--------------- Préparation du select en fonction des paramétres
+  PERFORM f100_prepare_selection.
+
+*--------------- Selection par les objects modifiés (tâches)
+  PERFORM f104_select_for_object.
+
+*-------------- Selection par les tâches de Repair
+  PERFORM f106_select_for_repair.
+
+*-------------- Selection par les SP number      "V2.1
+  PERFORM f260_sp_number.
+
+*-------------- Selection par les CR number      "V2.1
+  PERFORM f270_cr_number.
+
+
+  PERFORM get_tr_from_charm_change."ChaRM
+
+*<-- Begin V2.2 --
+  PERFORM f290_add_option.
+*--  End   V2.2 -->
+
+
+*-------------- Selection des ordres en table t_e070v
+  PERFORM f111_select_transport_req.
+
+
+
+***  CLEAR t_e070v.
+
+*--------------- Initialisation ALV
+  PERFORM f200_init_alv.
+
+
+* Begin of V2.0
+*--------------- Filtre sur les CTS projets
+  PERFORM f250_cts_project.
+
+* End of V2.0
+
+
+*----------------------------
+* Selection des codes retours et dates associées / déduction de
+* l'environnement en cours
+*----------------------------
+  PERFORM f300_select_additional_data.
+
+*  break to42718.
+
+
+*-------------------- User name selection
+  PERFORM f350_select_user.
+
+*--------------- Affichage de l'ALV
+  PERFORM f400_display_result.
+
+**********************************************************************
+**********************************************************************
+*                                                                    *
+*                     FORMS                                          *
+*                                                                    *
+**********************************************************************
+**********************************************************************
+
+  INCLUDE ztigi_tr_ctrl_conf_forms.

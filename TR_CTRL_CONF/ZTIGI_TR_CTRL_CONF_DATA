@@ -1,0 +1,237 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTIGI_TR_CTRL_CONF_DATA
+*&---------------------------------------------------------------------*
+
+*<-- ChaRM --
+TYPES:
+  ty_charm_ch       TYPE char10,
+  ty_originator_key TYPE char32,
+  ty_trorder_number TYPE char20,
+  ty_object_id      TYPE char10,
+  ty_zz_extern_cr   TYPE char12.
+
+
+TYPES:
+  BEGIN OF ty_ot,
+    originator_key TYPE ty_originator_key,
+    trorder_number TYPE ty_trorder_number,
+  END OF ty_ot,
+  ty_t_ot TYPE TABLE OF ty_ot,
+
+  BEGIN OF ty_cr_ext,
+    object_id    TYPE ty_object_id   ,
+    zz_extern_cr TYPE ty_zz_extern_cr,
+  END OF ty_cr_ext,
+  ty_t_cr_ext TYPE TABLE OF ty_cr_ext.
+
+*--------------- UPDATE TEXT
+TYPES:
+***  ito0t_text_head_rec LIKE thead,
+*  ito0t_text_edit_rec LIKE rssource-line,
+  ito0t_text_edit_rec(132).
+***  ito0t_text_edit_tab TYPE ito0t_text_edit_rec OCCURS 0.
+
+* Types
+TYPE-POOLS : slis, ctslg.
+
+*----------------------------------------------------------------------
+
+* Tables
+
+***TABLES: e070, e07t, e070a, e070v,tstrfcofil, adrp, e071v, e071.
+TABLES: e070, e070a, e070v, tstrfcofil, e071.
+
+*----------------------------------------------------------------------
+
+***DATA: l_attribute LIKE e070a-attribute VALUE 'SAP_CTS_PROJECT'.
+
+DATA: w_charm_ch TYPE ty_charm_ch,
+      w_charm_conex_failed TYPE sy-subrc.
+
+***DATA : container_text_f9       TYPE REF TO cl_gui_custom_container,
+***       text_f9                 TYPE REF TO cl_gui_textedit,
+***       ok_code                 LIKE sy-ucomm,
+***       c_line_length_f9        TYPE i VALUE 72,
+***       w_text_tab              TYPE ito0t_text_edit_tab,
+***       w_text_tab_sov          TYPE ito0t_text_edit_tab.
+
+*-- ChaRM -->
+
+***DATA   wt_lines_result         LIKE STANDARD TABLE OF tline
+***                                    WITH HEADER LINE.
+
+**** Zones de lecture
+***DATA: ls_e070v LIKE e070v.
+
+* Tables internes
+
+***tgo DATA : t_e070a LIKE TABLE OF e070a INITIAL SIZE 0,
+***       wa_e070a LIKE e070a.                                 "V2.1
+
+TYPES:
+  BEGIN OF ty_e070v,
+        trkorr      LIKE e070v-trkorr,      " Ordre/Tache C40
+        strkorr     LIKE e070v-strkorr,
+        trfunction  LIKE e070v-trfunction,                  " Type C1,
+        trstatus    LIKE e070v-trstatus,    " Status Released
+        as4user     LIKE e070v-as4user,     " propriétaire
+        name_text   TYPE adrp-name_text,    " full name
+        as4text     LIKE e070v-as4text,     " libellé
+        client      LIKE e070v-client,
+        envir(20)   TYPE c,                     "Environnement actuel
+        info(4)     TYPE c,                 "Additional information
+
+        intrc(2)    TYPE c,"       like tstrfcofil-retcode
+        intdate     LIKE tstrfcofil-trdate,
+        inttime     LIKE tstrfcofil-trtime,
+        pprrc(2)    TYPE c,
+        pprdate     LIKE tstrfcofil-trdate,                 " V2.0
+        pprtime     LIKE tstrfcofil-trtime,                 " V2.0
+        prdrc(2)   TYPE c,"       like tstrfcofil-retcode
+        prddate    LIKE tstrfcofil-trdate,
+        prdtime    LIKE tstrfcofil-trtime,
+
+
+        as4date     LIKE e070v-as4date,
+        as4time     LIKE e070v-as4time,
+
+        qc_number   LIKE e070a-reference,        "ChaRM
+        charm_ch    TYPE ty_charm_ch,            "ChaRM
+
+        color       TYPE slis_t_specialcol_alv,
+
+END OF ty_e070v.
+
+DATA : w_e070v TYPE ty_e070v.
+DATA : t_e070v LIKE TABLE OF w_e070v INITIAL SIZE 0 WITH HEADER LINE.
+DATA:  ls_settings  TYPE ctslg_settings.
+
+***DATA: t_e070v_request LIKE e070v OCCURS 0 WITH HEADER LINE.
+
+DATA : BEGIN OF t_result OCCURS 0,
+        trkorr      LIKE e070v-trkorr,      " Ordre/Tache C40
+        strkorr     LIKE e070v-strkorr,
+        trfunction  LIKE e070v-trfunction,                  " Type C1,
+        trstatus    LIKE e070v-trstatus,    " Status Released
+        as4user     LIKE e070v-as4user,     " propriétaire
+        name_text   TYPE adrp-name_text,    " full name
+        as4text     LIKE e070v-as4text,     " libellé
+        client      LIKE e070v-client,
+        envir(20)    TYPE c,                     "Environnement actuel
+        info(4)     TYPE c,                 "Additional information
+
+        intrc(2)    TYPE c,"   like tstrfcofil-retcode
+        intdate     LIKE tstrfcofil-trdate,
+        inttime     LIKE tstrfcofil-trtime,
+        pprrc(2)    TYPE c,
+        pprdate     LIKE tstrfcofil-trdate,                 " V2.0
+        pprtime     LIKE tstrfcofil-trtime,                 " V2.0
+        prdrc(2)   TYPE c,"       like tstrfcofil-retcode
+        prddate    LIKE tstrfcofil-trdate,
+        prdtime    LIKE tstrfcofil-trtime,
+        as4date     LIKE e070v-as4date,
+        as4time     LIKE e070v-as4time,
+        sp_number   LIKE e070a-reference,
+        qc_number   LIKE e070a-reference,
+        cts_project LIKE e070a-reference,
+
+         zcom(100)  TYPE c, "Comment
+*        text1(100)    TYPE c,
+*        text2(100)    TYPE c,
+*        text3(100)    TYPE c,
+        charm_ch   TYPE ty_charm_ch,            "ChaRM
+       color       TYPE slis_t_specialcol_alv.
+
+DATA : END OF t_result.
+
+* Paramétres pour l'édition ALV
+
+DATA : str_is_variant TYPE disvariant,
+       tab_fieldcat   TYPE slis_t_fieldcat_alv WITH HEADER LINE,
+       it_comment     TYPE slis_t_listheader WITH HEADER LINE,
+       gt_events      TYPE slis_t_event WITH HEADER LINE,
+       gt_events_exit TYPE slis_t_event_exit WITH HEADER LINE,
+       t_color        TYPE slis_t_specialcol_alv WITH HEADER LINE,
+       is_layout      TYPE slis_layout_alv.
+
+* Varialbles
+
+DATA: t_infos TYPE ctslg_cofile.
+DATA: t_system TYPE ctslg_system.
+DATA: t_step TYPE ctslg_step.
+DATA: t_action TYPE ctslg_action.
+
+
+DATA: w_and(3) TYPE c.
+DATA: w_or(3) TYPE c.
+***DATA: w_tab(72) OCCURS 10 WITH HEADER LINE.
+DATA: zdatelow(10) TYPE c.
+DATA: zdatehigh(10) TYPE c.
+DATA  w_grid_settings TYPE  lvc_s_glay.
+DATA: w_projet(60) TYPE c.
+
+* Datas for functions READ_TEXT and SAVE_TEXT
+DATA: w_header          TYPE thead.
+DATA: wt_lines          TYPE STANDARD TABLE OF tline
+                                 WITH HEADER LINE.
+
+DATA:  w_tabindex LIKE sy-index.
+
+* Types d'objet
+DATA: gt_object_texts      TYPE TABLE OF ko100 INITIAL SIZE 0.
+
+* Transport requests for objects
+
+DATA: BEGIN OF lt_order_object OCCURS 0,
+       trkorr TYPE trkorr.
+DATA: END OF lt_order_object.
+
+DATA: zn1 TYPE i.
+
+DATA: select_line TYPE flag.
+DATA  w_strkorr LIKE e070-strkorr.
+***DATA: it_selections TYPE  trwbo_selections WITH HEADER LINE.
+
+DATA fieldname TYPE fieldname.
+FIELD-SYMBOLS <fieldsymbol> TYPE any.
+DATA  w_trfunction LIKE e070v-trfunction.
+
+
+* field-symbols
+FIELD-SYMBOLS : <fs_e070v> LIKE w_e070v. "Charm
+
+*Order list selected without take into account ad option (TR linked).
+RANGES: r_order_noaddopt FOR e070-trkorr.
+
+RANGES: r_typ FOR e070-trfunction.
+
+RANGES: r_strkorr FOR e070-strkorr.
+
+* Constantes
+
+CONSTANTS :
+  c_charm_rfc_dest TYPE char10 VALUE 'SAPCHARM??',
+
+* Field name in target table.
+  BEGIN OF c_fielname_trordhc,
+    charm_change TYPE char14 VALUE 'ORIGINATOR_KEY',
+    order        TYPE char14 VALUE 'TRORDER_NUMBER',
+  END OF c_fielname_trordhc,
+
+  BEGIN OF c_fielname_crmd_orderadm_h,
+    charm_change TYPE char14 VALUE 'OBJECT_ID',
+    extern_cr    TYPE char14 VALUE 'ZZ_EXTERN_CR',
+  END OF c_fielname_crmd_orderadm_h.
+
+***CONSTANTS : c_att_cts   TYPE trattr VALUE 'SAP_CTS_PROJECT',
+CONSTANTS : c_att_issd   TYPE trattr VALUE 'ISSD',
+            c_att_qc   TYPE trattr VALUE 'QC'.
+***            c_att_no_qc   TYPE trattr VALUE 'NO_QC'.
+
+CONSTANTS : c_dev(3)    TYPE c VALUE 'DHM',
+            c_int(3)    TYPE c VALUE 'THM',
+            c_ppr(3)    TYPE c VALUE 'RHM',
+            c_prd(3)    TYPE c VALUE 'PHM',
+            c_perc(1)   TYPE c VALUE '%',
+            c_k(1)      TYPE c VALUE 'K',
+            c_att_cts   TYPE trattr VALUE 'SAP_CTS_PROJECT'.

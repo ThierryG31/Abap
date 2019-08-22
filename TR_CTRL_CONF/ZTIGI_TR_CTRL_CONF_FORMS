@@ -1,0 +1,2220 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTIGI_TR_CTRL_CONF_FORMS
+*&---------------------------------------------------------------------*
+
+*&-------------------------------------------------------------------*
+*&      Form  f100_prepare_selection
+*&-------------------------------------------------------------------*
+*       Preparation du select et du header en fonction des parametres
+*--------------------------------------------------------------------*
+
+FORM f100_prepare_selection.
+
+*--------- construction de it_comment
+  w_and = ''.
+
+  REFRESH it_comment.
+
+* Titre
+
+  CLEAR it_comment.
+  it_comment-typ = 'H'.
+  it_comment-info = text-it1.
+  APPEND it_comment.
+
+**********************************************************************
+* Type d'ordre ( K = Workbench -           W = Custo -
+*                T = Transport of copies - S = dev/correction)
+*                R = Tâche Repair
+**********************************************************************
+
+  CLEAR r_typ.
+  REFRESH r_typ.
+
+  CLEAR r_strkorr.
+  REFRESH r_strkorr.
+
+  MOVE 'I' TO r_typ-sign.
+  MOVE 'EQ' TO r_typ-option.
+
+
+  IF p_repai = 'X'.
+    MOVE 'R' TO r_typ-low.
+    APPEND r_typ.
+  ENDIF.
+
+
+  IF p_workb = 'X'.
+    MOVE 'K' TO r_typ-low.
+    APPEND r_typ.
+
+    IF p_corr = 'X' OR
+       NOT objecta IS INITIAL.
+
+      MOVE 'S' TO r_typ-low.
+      APPEND r_typ.
+
+      MOVE 'R' TO r_typ-low.
+      APPEND r_typ.
+
+    ELSEIF r_strkorr[] IS INITIAL.
+      MOVE 'I' TO r_strkorr-sign.
+      MOVE 'EQ' TO r_strkorr-option.
+      MOVE ' ' TO r_strkorr-low.
+      APPEND r_strkorr.
+    ENDIF.
+
+  ENDIF.
+
+  IF p_custo = 'X'.
+    MOVE 'W' TO r_typ-low.
+    APPEND r_typ.
+
+    IF p_corr = 'X' OR
+       NOT objecta IS INITIAL.
+      MOVE 'Q' TO r_typ-low.
+      APPEND r_typ.
+    ELSEIF r_strkorr[] IS INITIAL.
+      MOVE 'I' TO r_strkorr-sign.
+      MOVE 'EQ' TO r_strkorr-option.
+      MOVE ' ' TO r_strkorr-low.
+      APPEND r_strkorr.
+    ENDIF.
+
+  ENDIF.
+
+  IF p_copy = 'X'.
+    MOVE 'T' TO r_typ-low.
+    APPEND r_typ.
+  ENDIF.
+
+***********************************************************************
+** Projet / DEsignation dce l'ordre
+* Recherche sur le texte
+***********************************************************************
+  IF NOT r_projet[] IS INITIAL.
+    LOOP AT r_projet.
+      IF r_projet-high IS INITIAL AND r_projet-option <> 'CP'.
+        r_projet-option = 'CP'.
+        CONCATENATE '*' r_projet-low '*' INTO r_projet-low.
+        MODIFY r_projet.
+
+      ENDIF.
+    ENDLOOP.
+  ENDIF.
+
+***********************************************************************
+* Environnement en cours
+***********************************************************************
+  w_or = ''.
+  CLEAR it_comment.
+  it_comment-typ = 'S'.
+  it_comment-key = text-ie1.
+
+  IF p_prd = 'X'.
+    it_comment-info = c_prd.
+    w_or = ' or'.
+  ENDIF.
+
+  IF p_ppr = 'X'.
+    CONCATENATE it_comment-info w_or ' ' c_ppr INTO it_comment-info.
+    w_or = ' or'.
+  ENDIF.
+
+  IF p_int = 'X'.
+    CONCATENATE it_comment-info w_or ' ' c_int INTO it_comment-info.
+    w_or = ' or'.
+  ENDIF.
+
+  IF p_sdev = 'X'.
+    CONCATENATE it_comment-info w_or ' ' c_dev INTO it_comment-info.
+  ENDIF.
+
+  IF p_repai = 'X'.
+    CONCATENATE it_comment-info ' (Repairs Only)' INTO it_comment-info.
+  ENDIF.
+
+
+
+  APPEND it_comment.
+
+
+
+***********************************************************************
+* Date de transport en Intégration
+***********************************************************************
+  IF  ( NOT p_intdat-low IS INITIAL ) AND ( p_intdat-high IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_int text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_intdat-low+6(2) '.'
+                p_intdat-low+4(2) '.'
+                p_intdat-low(4) INTO zdatelow.
+
+    CONCATENATE 'On' zdatelow INTO it_comment-info SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+  IF  ( NOT p_intdat-high IS INITIAL ) AND ( p_intdat-low IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_int text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_intdat-high+6(2) '.'
+                p_intdat-high+4(2) '.'
+                p_intdat-high(4) INTO zdatehigh.
+
+    CONCATENATE 'Before' zdatehigh INTO it_comment-info
+                                      SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+  IF  ( NOT p_intdat-high IS INITIAL )
+  AND ( NOT p_intdat-low IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_int text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_intdat-low+6(2) '.'
+                p_intdat-low+4(2) '.'
+                p_intdat-low(4) INTO zdatelow.
+
+    CONCATENATE p_intdat-high+6(2) '.'
+                p_intdat-high+4(2) '.'
+                p_intdat-high(4) INTO zdatehigh.
+
+    CONCATENATE 'Between' zdatelow 'and' zdatehigh INTO it_comment-info
+                                      SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+***********************************************************************
+* Date de transport en pré-prod
+***********************************************************************
+  IF  ( NOT p_pprdat-low IS INITIAL ) AND ( p_pprdat-high IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_ppr text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_pprdat-low+6(2) '.'
+                p_pprdat-low+4(2) '.'
+                p_pprdat-low(4) INTO zdatelow.
+
+    CONCATENATE 'On' zdatelow INTO it_comment-info SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+  IF  ( NOT p_pprdat-high IS INITIAL ) AND ( p_pprdat-low IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_ppr text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_pprdat-high+6(2) '.'
+                p_pprdat-high+4(2) '.'
+                p_pprdat-high(4) INTO zdatehigh.
+
+    CONCATENATE 'Before' zdatehigh INTO it_comment-info
+                                      SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+
+  IF  ( NOT p_pprdat-high IS INITIAL ) AND
+       ( NOT p_pprdat-low IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_ppr text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_pprdat-low+6(2) '.'
+                p_pprdat-low+4(2) '.'
+                p_pprdat-low(4) INTO zdatelow.
+
+    CONCATENATE p_pprdat-high+6(2) '.'
+                p_pprdat-high+4(2) '.'
+                p_pprdat-high(4) INTO zdatehigh.
+
+    CONCATENATE 'Between' zdatelow 'and' zdatehigh INTO it_comment-info
+                                      SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+* End of V2.0
+
+***********************************************************************
+* Date de transport en Prod
+***********************************************************************
+  IF  ( NOT p_prddat-low IS INITIAL ) AND ( p_prddat-high IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_prd text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_prddat-low+6(2) '.'
+                p_prddat-low+4(2) '.'
+                p_prddat-low(4) INTO zdatelow.
+
+    CONCATENATE 'On' zdatelow INTO it_comment-info SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+  IF  ( NOT p_prddat-high IS INITIAL ) AND ( p_prddat-low IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_prd text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_prddat-high+6(2) '.'
+                p_prddat-high+4(2) '.'
+                p_prddat-high(4) INTO zdatehigh.
+
+    CONCATENATE 'Before' zdatehigh INTO it_comment-info
+                                      SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+
+  IF  ( NOT p_prddat-high IS INITIAL ) AND
+       ( NOT p_prddat-low IS INITIAL ).
+
+    CLEAR it_comment.
+    it_comment-typ = 'S'.
+    CONCATENATE c_prd text-kd1 INTO it_comment-key.
+
+    CONCATENATE p_prddat-low+6(2) '.'
+                p_prddat-low+4(2) '.'
+                p_prddat-low(4) INTO zdatelow.
+
+    CONCATENATE p_prddat-high+6(2) '.'
+                p_prddat-high+4(2) '.'
+                p_prddat-high(4) INTO zdatehigh.
+
+    CONCATENATE 'Between' zdatelow 'and' zdatehigh INTO it_comment-info
+                                      SEPARATED BY space.
+    APPEND it_comment.
+
+  ENDIF.
+
+
+
+ENDFORM.                    "f100_prepare_selection
+*---------------------------------------------------------------------*
+*       FORM f104_select_for_object                                   *
+*---------------------------------------------------------------------*
+*       ........                                                      *
+*---------------------------------------------------------------------*
+FORM f104_select_for_object.
+
+* Selection for object
+  IF ( NOT pgmida IS INITIAL AND
+       NOT objecta  IS INITIAL AND
+       NOT objnamea IS INITIAL )   OR
+     (     objecta  = '*' AND
+       NOT objnamea IS INITIAL ).
+    REPLACE '*' WITH '%' INTO pgmida.
+    REPLACE '*' WITH '%' INTO objecta.
+    REPLACE '*' WITH '%' INTO objnamea.
+
+
+    SELECT trkorr
+          INTO CORRESPONDING FIELDS OF TABLE lt_order_object
+              FROM e071
+             WHERE pgmid      LIKE  pgmida
+               AND object     LIKE  objecta
+               AND obj_name   LIKE  objnamea.
+
+    IF NOT sy-subrc IS INITIAL.
+      MESSAGE i899(mg) WITH text-i22 objnamea.
+***tgo      EXIT.
+    ELSE.
+      IF r_order[] IS INITIAL.
+        LOOP AT lt_order_object.
+
+          SELECT SINGLE trkorr trfunction
+          INTO (r_order-low, w_trfunction)
+           FROM e070v
+           WHERE trkorr = lt_order_object-trkorr.
+
+          IF p_repai = 'X' AND w_trfunction <> 'R'.
+            CONTINUE.
+          ENDIF.
+
+          IF sy-subrc IS INITIAL.
+*            IF r_order-low IS INITIAL.
+
+            SELECT SINGLE strkorr INTO r_order-low
+              FROM e070v
+              WHERE trkorr = lt_order_object-trkorr.
+
+*            ENDIF.
+
+            r_order-sign = 'I'.
+            r_order-option = 'EQ'.
+            APPEND r_order.
+
+          ENDIF.
+
+        ENDLOOP.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.                    "f104_select_for_object
+*---------------------------------------------------------------------*
+*       FORM f106_select_for_repair                                   *
+*---------------------------------------------------------------------*
+*       ........                                                      *
+*---------------------------------------------------------------------*
+FORM f106_select_for_repair.
+
+  IF p_repai = 'X' AND  objecta IS INITIAL.
+
+    IF r_order[] IS INITIAL.
+
+      SELECT *
+*      UP TO p_max ROWS
+      FROM e070v
+              WHERE as4text IN r_projet
+              AND client IN r_client
+              AND as4user IN r_owner
+              AND as4date IN r_date
+              AND trfunction = 'R'.
+
+        r_order-sign = 'I'.
+        r_order-option = 'EQ'.
+        r_order-low = e070v-strkorr.
+        APPEND r_order.
+
+      ENDSELECT.
+
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.                    "f106_select_for_repair
+*---------------------------------------------------------------------*
+*       FORM f111_select_for_description                              *
+*---------------------------------------------------------------------*
+*       ........                                                      *
+*---------------------------------------------------------------------*
+FORM f111_select_transport_req.
+
+  DATA : w_cr_sp_flag TYPE flag,
+         lw_trkorr LIKE e070v-trkorr,
+         lw_strkorr LIKE e070v-strkorr.
+
+  RANGES : lr_order FOR e070-trkorr.                        "+ST34735
+  DATA : lw_range_low TYPE i VALUE 1,                       "+ST34735
+         lw_range_high TYPE i VALUE 1,                      "+ST34735
+         lw_leave_loop TYPE i.                              "+ST34735
+  DATA: ls_e070v LIKE e070v.
+
+  FREE t_e070v.
+
+* Selection du projet si renseigné
+  IF NOT r_order[] IS INITIAL OR NOT r_projet[] IS INITIAL.
+
+    DO.
+      lw_range_low = lw_range_high.
+      lw_range_high = lw_range_low + 1000.
+      DESCRIBE TABLE r_order LINES lw_leave_loop.
+      IF lw_leave_loop < lw_range_low.  "Leave the DO when the r_order
+        " is completly processed
+        EXIT.
+      ENDIF.
+      REFRESH lr_order.
+      LOOP AT r_order.
+        IF sy-tabix => lw_range_low AND sy-tabix < lw_range_high.
+          lr_order = r_order.
+          APPEND lr_order.
+        ENDIF.
+      ENDLOOP.
+
+*  * Select orders
+      SELECT *
+*      UP TO p_max ROWS
+      FROM e070v
+          WHERE
+          trkorr IN lr_order
+          AND client IN r_client
+          AND as4user IN r_owner
+          AND as4date IN r_date
+          AND trfunction IN r_typ
+          AND strkorr IN r_strkorr.
+
+        MOVE e070v-as4text TO w_projet.
+        TRANSLATE w_projet TO UPPER CASE.
+
+        IF NOT r_qc_num[] IS INITIAL.                       "V2.1
+          w_cr_sp_flag = 'X'.
+        ENDIF.
+        IF NOT r_sp_num[] IS INITIAL.                       "V2.1
+          w_cr_sp_flag = 'X'.
+        ENDIF.
+
+        IF NOT w_cr_sp_flag IS INITIAL.
+          "V2.1
+*   Filtre supplémentaire
+          IF NOT p_sdev IS INITIAL AND
+                 p_int IS INITIAL  AND
+                 p_ppr IS INITIAL AND                       " V2.0
+                 p_prd IS INITIAL AND
+                 e070v-trstatus = 'R'.
+            CONTINUE.
+          ENDIF.
+
+
+          MOVE-CORRESPONDING e070v TO t_e070v.
+          APPEND t_e070v.
+
+          IF p_corr = 'X'.
+            SELECT * FROM e070v
+            WHERE strkorr = t_e070v-trkorr.
+
+              MOVE-CORRESPONDING e070v TO t_e070v.
+              APPEND t_e070v.
+            ENDSELECT.
+          ENDIF.
+
+        ELSE.
+          IF w_projet IN r_projet.
+*   Filtre supplémentaire
+            IF NOT p_sdev IS INITIAL AND
+                   p_int IS INITIAL  AND
+                   p_ppr IS INITIAL AND                     " V2.0
+                   p_prd IS INITIAL AND
+                   e070v-trstatus = 'R'.
+              CONTINUE.
+            ENDIF.
+
+
+            MOVE-CORRESPONDING e070v TO t_e070v.
+            APPEND t_e070v.
+
+            IF p_corr = 'X'.
+              SELECT * FROM e070v
+              WHERE strkorr = t_e070v-trkorr.
+
+                MOVE-CORRESPONDING e070v TO t_e070v.
+                APPEND t_e070v.
+              ENDSELECT.
+
+            ENDIF.
+          ENDIF.
+        ENDIF.
+
+      ENDSELECT.
+    ENDDO.
+
+    SORT t_e070v BY trkorr.
+
+* Selection de l'object
+
+
+  ELSEIF objecta IS INITIAL.
+
+* Selection des valeurs de base
+
+    CONCATENATE c_dev '%' INTO lw_trkorr.
+    SELECT *
+*    UP TO p_max ROWS
+    FROM e070v
+            WHERE
+            ( trkorr LIKE lw_trkorr
+            AND client IN r_client
+            AND as4user IN r_owner
+            AND as4date IN r_date
+            AND trfunction IN r_typ
+            AND strkorr IN r_strkorr )
+
+
+
+            ORDER BY trkorr DESCENDING.
+
+
+* Filtre supplémentaire
+      IF NOT p_sdev IS INITIAL AND
+             p_int IS INITIAL  AND
+             p_ppr IS INITIAL AND                           " V2.0
+             p_prd IS INITIAL AND
+             e070v-trstatus = 'R'.
+        CONTINUE.
+      ENDIF.
+
+
+
+      MOVE-CORRESPONDING e070v TO t_e070v.
+
+      APPEND t_e070v.
+
+    ENDSELECT.
+
+
+  ENDIF. " IF NOT r_order[] IS INITIAL OR NOT r_projet[] IS INITIAL.
+
+*  break to42718.
+
+
+*---Cas des ordres d'un autre user mais sous lequel on a une tâche
+
+  IF NOT r_owner[] IS INITIAL AND r_order[] IS INITIAL.
+
+    CONCATENATE c_dev '%' INTO lw_trkorr.
+    CONCATENATE c_dev 'K%' INTO lw_strkorr.
+    SELECT * FROM e070v
+                WHERE
+                ( trkorr LIKE lw_trkorr
+                AND client IN r_client
+                AND as4user IN r_owner
+                AND as4date IN r_date
+                AND ( trfunction = 'R'
+                   OR trfunction = 'S'
+                   OR trfunction = 'Q' )
+                AND strkorr LIKE lw_strkorr ).
+      SELECT SINGLE * FROM e070v
+      INTO ls_e070v
+      WHERE trkorr = e070v-strkorr
+      AND trfunction IN r_typ.
+
+* Par rapport à l'ordre trouvé, il faut revérifier les critères de
+* sélection !
+
+      IF sy-subrc = 0.
+        IF ls_e070v-as4user <> e070v-as4user.
+
+          MOVE ls_e070v-as4text TO w_projet.
+          TRANSLATE w_projet TO UPPER CASE.
+          IF w_projet IN r_projet.
+
+* Filtre supplémentaire
+            IF NOT p_sdev IS INITIAL AND
+                   p_int IS INITIAL  AND
+                   p_ppr IS INITIAL AND                     " V2.0
+                   p_prd IS INITIAL AND
+                   ls_e070v-trstatus = 'R'.
+              CONTINUE.
+            ENDIF. "NOT p_sdev IS INITIAL AND ...
+
+
+
+            MOVE-CORRESPONDING ls_e070v TO t_e070v.
+            APPEND t_e070v.
+
+          ENDIF. "w_projet IN r_projet
+
+        ENDIF. "ls_e070v-as4user <> e070v-as4user
+      ENDIF. "sy-subrc = 0
+    ENDSELECT.
+  ENDIF.
+
+
+*------------- Tri de la table t_070v  ordre sup / ordre
+  SORT t_e070v BY strkorr trkorr ASCENDING.
+  DELETE ADJACENT DUPLICATES FROM t_e070v
+  COMPARING trkorr.
+
+
+ENDFORM.                    "f111_select_transport_req
+
+*&--------------------------------------------------------------------*
+*&      FORM f200_init_alv                                            *
+*&--------------------------------------------------------------------*
+*       Initialisation des ALV                                        *
+*---------------------------------------------------------------------*
+
+FORM f200_init_alv.
+
+  str_is_variant-report = sy-repid.
+
+* indication du champ correspondant Ã  la couleur
+
+  is_layout-coltab_fieldname = 'COLOR'.
+
+* indication du OK code choisi pour le 2x click
+
+  is_layout-f2code          = 'PICK'.
+
+  w_grid_settings-coll_top_p = 'X'.
+
+ENDFORM.                    "f200_init_alv
+
+* Begin of V2.0
+*&--------------------------------------------------------------------*
+*&      FORM f250_cts_project                                         *
+*&--------------------------------------------------------------------*
+*       Filtre sur les CTS Project                                    *
+*---------------------------------------------------------------------*
+FORM f250_cts_project.
+
+  DATA lc_att_cts    TYPE trattr VALUE c_att_cts.
+  DATA lt_e070a      TYPE TABLE OF e070a.
+  DATA lwa_e070a     TYPE e070a.
+
+
+* Si il y a des OTs déjà sélectionnés et qu'on veut filtrer sur le CTS
+  IF NOT r_cts[] IS INITIAL.
+
+    LOOP AT t_e070v.
+
+*   Sélection des OTs pour les CTS project renseignés
+      SELECT *
+      FROM e070a
+      WHERE attribute = lc_att_cts
+      AND   reference IN r_cts
+      AND   trkorr = t_e070v-trkorr.
+      ENDSELECT.
+*       Si la donnée n'existe pas, suppression
+      IF sy-subrc <> 0.
+        DELETE t_e070v.
+      ENDIF.
+
+
+
+    ENDLOOP.
+
+
+
+*   Si aucune donnée n'a été retournée, on supprime toutes les données
+    IF sy-subrc <> 0.
+      REFRESH t_e070v.
+      CLEAR t_e070v.
+
+*   Sinon, on supprime toutes les données n'ayant pas été retournées
+    ELSE.
+      SORT lt_e070a.
+
+    ENDIF.
+
+
+  ENDIF.
+
+
+ENDFORM.                    "f250_cts_project
+* End of V2.0
+
+* Begin of V2.1
+*&--------------------------------------------------------------------*
+*&      FORM f260_sp_number                                           *
+*&--------------------------------------------------------------------*
+*       Filter on SP number                                           *
+*---------------------------------------------------------------------*
+FORM f260_sp_number.
+
+  DATA : t_e070a LIKE TABLE OF e070a INITIAL SIZE 0,
+         wa_e070a LIKE e070a.                                 "V2.1
+* Check the SP number
+  IF NOT r_sp_num[] IS INITIAL.
+    FREE t_e070a.
+    SELECT trkorr reference INTO CORRESPONDING FIELDS OF TABLE t_e070a
+                                FROM e070a
+                                WHERE attribute = c_att_issd
+                                AND   reference IN r_sp_num.
+
+    IF sy-subrc = 0.
+      LOOP AT t_e070a INTO wa_e070a.
+        CLEAR : r_order.
+        r_order-sign = 'I'.
+        r_order-option = 'EQ'.
+        r_order-low = wa_e070a-trkorr.
+        APPEND r_order.
+      ENDLOOP.
+    ENDIF.
+  ENDIF.
+
+* Initialize the search text with the SP
+  IF r_projet[] IS INITIAL.
+    LOOP AT r_sp_num.
+      CLEAR r_projet.
+      r_projet-sign = 'I'.
+      r_projet-option = 'CP'.
+      CONCATENATE '*' r_sp_num-low '*' INTO r_projet-low.
+      APPEND r_projet.
+    ENDLOOP.
+  ENDIF.
+
+ENDFORM.                    "f260_sp_number
+*&--------------------------------------------------------------------*
+*&      FORM f270_cr_number                                           *
+*&--------------------------------------------------------------------*
+*       Filter on CR number                                           *
+*---------------------------------------------------------------------*
+FORM f270_cr_number.
+  DATA : t_e070a LIKE TABLE OF e070a INITIAL SIZE 0,
+         wa_e070a LIKE e070a.                                 "V2.1
+
+* Check the QC number
+  IF NOT r_qc_num[] IS INITIAL.
+    REFRESH t_e070a.
+    SELECT trkorr reference INTO CORRESPONDING FIELDS OF TABLE t_e070a
+                                FROM e070a
+                                WHERE attribute = c_att_qc
+                                AND   reference IN r_qc_num.
+
+    IF sy-subrc = 0.
+      LOOP AT t_e070a INTO wa_e070a.
+        CLEAR : r_order.
+        r_order-sign = 'I'.
+        r_order-option = 'EQ'.
+        r_order-low = wa_e070a-trkorr.
+        APPEND r_order.
+      ENDLOOP.
+    ENDIF.
+  ENDIF.
+
+* Initialize the search text with the CR
+  IF r_projet[] IS INITIAL.
+    LOOP AT r_qc_num.
+      CLEAR r_projet.
+      r_projet-sign = 'I'.
+      r_projet-option = 'CP'.
+      CONCATENATE '*' r_qc_num-low '*' INTO r_projet-low.
+      APPEND r_projet.
+    ENDLOOP.
+  ENDIF.
+
+ENDFORM.                    "f270_cr_number
+*End of V2.1
+
+*&--------------------------------------------------------------------*
+*&      Form  f300_select_additional_data
+*&--------------------------------------------------------------------*
+*       Preparation du select et du header en fonction des parametres
+*---------------------------------------------------------------------*
+
+FORM f300_select_additional_data.
+
+*  PERFORM read_ztr_texts.
+  PERFORM get_charm_change_from_tr. "Charm
+
+  LOOP AT t_e070v.
+
+***tgo    w_flag_vi2 = 0.
+
+***********************************************************************
+* On exclu les tâches
+***********************************************************************
+    IF t_e070v-strkorr IS INITIAL. "Si ce n'est pas une tâche
+*--- initialisation de l'environnement à dev system
+      t_e070v-envir = c_dev.
+      t_e070v-info = '@4A@'.
+    ENDIF.
+
+***********************************************************************
+* Analyse des journaux de transport pour les ordres released
+***********************************************************************
+    IF  t_e070v-strkorr IS INITIAL AND "Ce n'est pas une tâche
+        t_e070v-trstatus = 'R'. "Si l'ordre est libéré
+
+      ls_settings-detailed_depiction = 'X'.
+
+* Récupération des infos liées au(x) transport(s)
+      CALL FUNCTION 'TR_READ_GLOBAL_INFO_OF_REQUEST'
+        EXPORTING
+          iv_trkorr   = t_e070v-trkorr
+          is_settings = ls_settings
+        IMPORTING
+          es_cofile   = t_infos.
+
+      IF t_infos-systems[] IS INITIAL.
+        t_e070v-envir = '???'.
+        t_e070v-info = '@8O@'.
+      ELSE.
+        PERFORM f305_check_cofile_log.
+      ENDIF.
+
+
+    ENDIF.
+
+***********************************************************************
+* type d'ordre W -> C (Custo) K -> W (Workbench)
+***********************************************************************
+    IF t_e070v-trfunction = 'W'.
+      t_e070v-trfunction = 'C'.
+    ELSE.
+      t_e070v-trfunction = 'W'.
+    ENDIF.
+
+
+
+
+***********************************************************************
+* Cas particulier des tâches
+***********************************************************************
+    IF NOT t_e070v-strkorr IS INITIAL. "On est sur une tâche
+      READ TABLE t_e070v WITH KEY trkorr = t_e070v-strkorr
+      INTO w_e070v.
+      IF sy-subrc = 0.
+        t_e070v-envir = w_e070v-envir.
+        t_e070v-info = w_e070v-info.
+        t_e070v-intrc = w_e070v-intrc.
+        t_e070v-intdate = w_e070v-intdate.
+        t_e070v-inttime = w_e070v-inttime.
+
+        t_e070v-pprrc = w_e070v-pprrc.
+        t_e070v-pprdate = w_e070v-pprdate.
+        t_e070v-pprtime = w_e070v-pprtime.
+
+        t_e070v-prdrc = w_e070v-prdrc.
+        t_e070v-prddate = w_e070v-prddate.
+        t_e070v-prdtime = w_e070v-prdtime.
+        t_e070v-trfunction = w_e070v-trfunction.
+        t_e070v-color[] = w_e070v-color[].
+
+      ENDIF.
+
+    ENDIF.
+
+
+***********************************************************************
+* Mise à jour de la ligne
+***********************************************************************
+    MODIFY t_e070v.
+
+
+
+***********************************************************************
+* Mise en forme couleur en fonction de l'environnement trouvé
+***********************************************************************
+    PERFORM f310_set_colors_of_actual_env.
+
+
+***********************************************************************
+* Analyse des codes retour
+***********************************************************************
+    PERFORM f315_set_color_of_transport_rc.
+
+
+
+***********************************************************************
+* Alimentation de la table résultat
+***********************************************************************
+    CLEAR select_line.
+
+*    IF t_e070v-strkorr IS INITIAL. "On n'est pas sur une tâche
+
+    IF ( p_prd = 'X' AND t_e070v-envir CS c_prd  ) OR
+       ( p_ppr = 'X' AND t_e070v-envir CS c_ppr  ) OR       " V2.0
+       ( p_int = 'X' AND t_e070v-envir CS c_int  ) OR
+       ( p_sdev = 'X' AND t_e070v-envir CS c_dev  ) OR
+       ( t_e070v-envir CS '???' ).                "OR
+
+      IF t_e070v-intdate IN p_intdat AND
+         t_e070v-pprdate IN p_pprdat AND                    " V2.0
+         t_e070v-prddate IN p_prddat.
+
+        select_line = 'X'.
+
+
+        IF t_e070v-info = '@8O@' AND p_wt_log IS INITIAL.
+          select_line = ' '.
+        ENDIF.
+
+        IF t_e070v-info = '@11@' AND p_buff IS INITIAL.
+          select_line = ' '.
+        ENDIF.
+
+      ENDIF.
+
+    ENDIF.
+
+
+    IF select_line = 'X'.
+      MOVE-CORRESPONDING t_e070v TO t_result.
+      APPEND t_result.
+    ENDIF.
+
+  ENDLOOP.
+
+  PERFORM read_ztr_texts_result.
+ENDFORM.                    "f300_select_additional_data
+
+*---------------------------------------------------------------------*
+*       FORM f305_check_cofile_log                                    *
+*---------------------------------------------------------------------*
+*       ........                                                      *
+*---------------------------------------------------------------------*
+FORM f305_check_cofile_log.
+
+
+***********************************************************************
+* Recherche de l'import dans l'Intégration
+***********************************************************************
+
+  PERFORM f307_check_import USING c_int.
+
+
+* Begin of V2.0
+***********************************************************************
+* Recherche de l'import dans la pré-prod
+***********************************************************************
+
+  PERFORM f307_check_import USING c_ppr.
+* End of V2.0
+
+***********************************************************************
+* Recherche de l'import dans la prod
+***********************************************************************
+
+  PERFORM f307_check_import USING c_prd.
+
+ENDFORM.                    "f305_check_cofile_log
+*---------------------------------------------------------------------*
+*       FORM f307_check_import                                        *
+*---------------------------------------------------------------------*
+*       ........                                                      *
+*---------------------------------------------------------------------*
+*  -->  S_SYSID                                                       *
+*---------------------------------------------------------------------*
+FORM f307_check_import USING s_sysid TYPE trtarsys.
+  DATA: lw_sysid LIKE s_sysid.
+
+  READ TABLE t_infos-systems WITH KEY systemid = s_sysid INTO t_system.
+
+  IF sy-subrc = 0.
+
+    LOOP AT t_system-steps INTO t_step.
+
+      IF t_step-stepid = 'I'.
+
+*      READ TABLE t_system-steps WITH KEY stepid = 'I' INTO t_step.
+*      IF sy-subrc = 0.
+        t_e070v-envir = s_sysid.
+
+*        t_e070v-intrc = t_system-rc.
+        CASE s_sysid.
+          WHEN c_dev.
+            lw_sysid = 'dev'.
+          WHEN c_int.
+            lw_sysid = 'int'.
+          WHEN c_ppr.
+            lw_sysid = 'ppr'.
+          WHEN c_prd.
+            lw_sysid = 'prd'.
+        ENDCASE.
+
+        CONCATENATE 't_e070v-' lw_sysid 'rc' INTO fieldname.
+        ASSIGN (fieldname) TO <fieldsymbol>.
+        <fieldsymbol> = t_system-rc.
+        IF t_system-rc > '8'.
+          t_e070v-info = '@0A@'.
+        ELSEIF t_system-rc > '4'.
+          t_e070v-info = '@09@'.
+        ELSE.
+          t_e070v-info = '@08@'.
+        ENDIF.
+
+
+        DESCRIBE TABLE t_step-actions LINES zn1.
+        READ TABLE t_step-actions INDEX zn1 INTO t_action.
+
+*        t_e070v-fgidate = t_action-date.
+        CONCATENATE 't_e070v-' lw_sysid 'date' INTO fieldname.
+        ASSIGN (fieldname) TO <fieldsymbol>.
+        <fieldsymbol> = t_action-date.
+
+
+
+*        t_e070v-fgitime = t_action-time.
+        CONCATENATE 't_e070v-' lw_sysid 'time' INTO fieldname.
+        ASSIGN (fieldname) TO <fieldsymbol>.
+        <fieldsymbol> = t_action-time.
+
+
+        CLEAR t_action.
+
+      ENDIF. "Imported in s_sysid
+
+      IF t_step-stepid = '>'.
+        t_e070v-info = '@11@'.
+*        t_e070v-intrc = ''.
+
+        CONCATENATE 't_e070v-' lw_sysid 'rc' INTO fieldname.
+        ASSIGN (fieldname) TO <fieldsymbol>.
+        <fieldsymbol> = ''.
+      ENDIF.
+
+      CLEAR t_step.
+
+    ENDLOOP.
+  ENDIF.
+
+  CLEAR t_system.
+
+* Traitement transport manuel
+
+***  READ TABLE t_infos-systems WITH KEY systemid = 'VI2' INTO t_system.
+***  IF sy-subrc = 0.
+***tgo    w_flag_vi2 = 1.
+***  ENDIF.
+***  READ TABLE t_infos-systems WITH KEY systemid = 'VIR' INTO t_system.
+***  IF sy-subrc = 0.
+***tgo    w_flag_vi2 = 1.
+***  ENDIF.
+
+
+ENDFORM.                    "f307_check_import
+*---------------------------------------------------------------------*
+*       FORM f310_set_colors_of_actual_env                         *
+*---------------------------------------------------------------------*
+*       ........                                                      *
+*---------------------------------------------------------------------*
+FORM f310_set_colors_of_actual_env.
+
+
+  REFRESH t_color. CLEAR t_color.
+
+* Begin of ST34735
+* Color the defined TO in the selection screen
+  IF p_lktr = 'X'.
+    LOOP AT r_order_noaddopt.
+      IF r_order_noaddopt-low = t_e070v-trkorr(10).
+        t_color-fieldname = 'TRKORR'.
+        t_color-color-col = 3.
+        t_color-color-int = 0.
+        t_color-color-inv = 0.
+        APPEND t_color.
+      ENDIF.
+    ENDLOOP.
+  ENDIF.
+* End of ST34735
+
+
+  IF t_e070v-envir CS c_prd.
+    CLEAR t_color.
+    t_color-fieldname = 'ENVIR'.
+    t_color-color-col = 1.
+    t_color-color-int = 0.
+    t_color-color-inv = 0.
+    APPEND t_color.
+
+* Begin of V2.0
+  ELSEIF  t_e070v-envir CS c_ppr.
+    CLEAR t_color.
+    t_color-fieldname = 'ENVIR'.
+    t_color-color-col = 6.
+
+* Traitement transport manuel
+***tgo IF w_flag_vi2 = 1.
+***      t_e070v-envir = c_prd.
+***      t_color-color-col = 7.
+***    ENDIF.
+
+    t_color-color-int = 0.
+    t_color-color-inv = 0.
+    APPEND t_color.
+* End of V2.0
+
+  ELSEIF  t_e070v-envir CS c_int.
+    CLEAR t_color.
+    t_color-fieldname = 'ENVIR'.
+    t_color-color-col = 5.
+
+* Traitement transport manuel
+***tgo IF w_flag_vi2 = 1.
+***      t_e070v-envir = c_prd.
+***      t_color-color-col = 7.
+***    ENDIF.
+
+    t_color-color-int = 0.
+    t_color-color-inv = 0.
+    APPEND t_color.
+
+  ELSEIF  t_e070v-envir CS c_dev.
+    CLEAR t_color.
+    t_color-fieldname = 'ENVIR'.
+    t_color-color-col = 3.
+* Traitement transport manuel
+***tgo IF w_flag_vi2 = 1.
+***      t_e070v-envir = c_prd.
+***      t_color-color-col = 7.
+***    ENDIF.
+
+    t_color-color-int = 0.
+    t_color-color-inv = 0.
+    APPEND t_color.
+
+  ELSEIF  t_e070v-envir CS '???'.
+    CLEAR t_color.
+    t_color-fieldname = 'ENVIR'.
+    t_color-color-col = 7.
+    t_color-color-int = 0.
+    t_color-color-inv = 0.
+    APPEND t_color.
+
+  ENDIF.
+
+
+ENDFORM.                    "f310_set_colors_of_actual_env
+*---------------------------------------------------------------------*
+*       FORM f315_set_color_of_transport_rc                       *
+*---------------------------------------------------------------------*
+*       ........                                                      *
+*---------------------------------------------------------------------*
+FORM f315_set_color_of_transport_rc.
+  CASE t_e070v-intrc.
+    WHEN 0.
+
+    WHEN 4.
+      CLEAR t_color.
+      t_color-fieldname = 'INTRC'.
+      t_color-color-col = 3.
+      t_color-color-int = 1.
+      t_color-color-inv = 0.
+      APPEND t_color.
+
+    WHEN OTHERS.
+      CLEAR t_color.
+      t_color-fieldname = 'INTRC'.
+      t_color-color-col = 6.
+      t_color-color-int = 1.
+      t_color-color-inv = 0.
+      APPEND t_color.
+
+  ENDCASE.
+
+
+* Begin of V2.0
+  CASE t_e070v-pprrc.
+    WHEN 0.
+
+    WHEN 4.
+      CLEAR t_color.
+      t_color-fieldname = 'PPRRC'.
+      t_color-color-col = 3.
+      t_color-color-int = 1.
+      t_color-color-inv = 0.
+      APPEND t_color.
+
+    WHEN OTHERS.
+      CLEAR t_color.
+      t_color-fieldname = 'PPRRC'.
+      t_color-color-col = 6.
+      t_color-color-int = 1.
+      t_color-color-inv = 0.
+      APPEND t_color.
+
+  ENDCASE.
+* End of V2.0
+
+*----------------------------------------------------------------------
+
+  CASE t_e070v-prdrc.
+
+    WHEN 0.
+
+    WHEN 4.
+      CLEAR t_color.
+      t_color-fieldname = 'PRDRC'.
+      t_color-color-col = 3.
+      t_color-color-int = 1.
+      t_color-color-inv = 0.
+      APPEND t_color.
+
+    WHEN OTHERS.
+      CLEAR t_color.
+      t_color-fieldname = 'PRDRC'.
+      t_color-color-col = 6.
+      t_color-color-int = 1.
+      t_color-color-inv = 0.
+      APPEND t_color.
+
+  ENDCASE.
+*----------------------------------------------------------------------
+
+
+  t_e070v-color = t_color[].
+ENDFORM.                    "f315_set_color_of_transport_rc
+
+*&--------------------------------------------------------------------*
+*&      Form  f400_display_result
+*&--------------------------------------------------------------------*
+*       Affichage du résultat sous forme d'une grille ALV
+*---------------------------------------------------------------------*
+
+FORM f400_display_result.
+
+* Initialisation pour l'affichage de la grille ALV
+
+  str_is_variant-report       = sy-repid.
+  is_layout-colwidth_optimize = 'X'.
+
+* Initialisation pour l'affichage de l'entête
+
+  CLEAR gt_events.
+  gt_events-name = slis_ev_top_of_page.    " évènement haut de page
+  gt_events-form = 'TOP_OF_PAGE'.          " nom de la routine du prog
+  APPEND gt_events.
+
+* Refresh
+
+  CLEAR gt_events_exit.
+  gt_events_exit-ucomm = '&REFRESH'.    " ("Func code for Refresh)
+  gt_events_exit-after = 'X'.
+  APPEND gt_events_exit.
+
+* Préparation des colonnes à afficher
+
+  REFRESH tab_fieldcat.
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+    EXPORTING
+      i_program_name         = str_is_variant-report
+      i_internal_tabname     = 'T_RESULT'
+      i_inclname             = str_is_variant-report
+      i_bypassing_buffer     = 'X'
+    CHANGING
+      ct_fieldcat            = tab_fieldcat[]
+    EXCEPTIONS
+      inconsistent_interface = 1
+      program_error          = 2
+      OTHERS                 = 3.
+
+  IF sy-subrc NE 0.
+*    message i398(00) with text-e03.
+    STOP.
+  ENDIF.
+
+* Modification du titre des colonnes
+
+
+  LOOP AT tab_fieldcat.
+
+    CASE tab_fieldcat-fieldname.
+
+      WHEN 'TRKORR'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'Order'.
+      WHEN 'STRKORR'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'Task'.
+      WHEN 'TRFUNCTION'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'Type'.
+      WHEN 'AS4USER'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'Owner'.
+      WHEN 'NAME_TEXT'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'Name'.
+      WHEN 'AS4TEXT'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = 'Description'.
+        tab_fieldcat-seltext_s = 'Descript'.
+      WHEN 'ENVIR'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = 'Actual Environnement'.
+        tab_fieldcat-seltext_m = 'Actual Env'.
+        tab_fieldcat-seltext_s = 'Env'.
+      WHEN 'INFO'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = 'Additional Information'.
+        tab_fieldcat-seltext_m = 'Add. Info.'.
+        tab_fieldcat-seltext_s = 'Info'.
+*Begin of SAGG++
+      WHEN 'SP_NUMBER'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'SP Number'.
+
+      WHEN 'QC_NUMBER'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'QC Number'.
+        tab_fieldcat-hotspot = 'X'.
+
+      WHEN 'CTS_PROJECT'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'CTS Project'.
+*END of SAGG++
+
+      WHEN 'INTRC'.
+        CONCATENATE c_int ' Transport Return Code' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_int ' RC' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+* Begin of V2.0
+      WHEN 'PPRRC'.
+        CONCATENATE c_ppr ' Transport Return Code' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_ppr ' RC' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+* End of V2.0
+      WHEN 'PRDRC'.
+        CONCATENATE c_prd ' Transport Return Code' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_prd ' RC' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+      WHEN 'INTDATE'.
+        CONCATENATE c_int ' Transport Date' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_int ' Date' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+* Begin of V2.0
+      WHEN 'PPRDATE'.
+        CONCATENATE c_ppr ' Transport Date' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_ppr ' Date' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+* End of V2.0
+      WHEN 'PRDDATE'.
+        CONCATENATE c_prd ' Transport Date' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_prd ' Date' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+
+      WHEN 'INTTIME'.
+        CONCATENATE c_int ' Transport Time' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_int ' Time' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+      WHEN 'PPRTIME'.
+        CONCATENATE c_ppr ' Transport Time' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_ppr ' Time' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+      WHEN 'PRDTIME'.
+        CONCATENATE c_prd ' Transport Time' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_prd ' Time' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_s = tab_fieldcat-seltext_m = tab_fieldcat-seltext_l.
+
+      WHEN 'AS4DATE'.
+        CONCATENATE c_dev ' Creation/Change Date' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_dev ' Creation Date' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = tab_fieldcat-seltext_l.
+      WHEN 'AS4TIME'.
+        CONCATENATE c_dev ' Creation/Change Time' INTO tab_fieldcat-reptext_ddic.
+        CONCATENATE c_dev ' Creation Time' INTO tab_fieldcat-seltext_l.
+        tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = tab_fieldcat-seltext_l.
+
+      WHEN 'ZCOM'.
+        tab_fieldcat-reptext_ddic = tab_fieldcat-seltext_l = tab_fieldcat-seltext_m = tab_fieldcat-seltext_s = 'Comment'.
+*      WHEN 'TEXT1'.
+*        tab_fieldcat-reptext_ddic = 'Analysis'.
+*        tab_fieldcat-seltext_l = 'Analysis'.
+*        tab_fieldcat-seltext_m = 'Analysis'.
+*        tab_fieldcat-seltext_s = 'Analysis'.
+*
+*      WHEN 'TEXT2'.
+*        tab_fieldcat-reptext_ddic = 'Sequence Order'.
+*        tab_fieldcat-seltext_l = 'Sequence Order'.
+*        tab_fieldcat-seltext_m = 'Sequence Order'.
+*        tab_fieldcat-seltext_s = 'Sequence Order'.
+*
+*      WHEN 'TEXT3'.
+*        tab_fieldcat-reptext_ddic = 'Other ISSD'.
+*        tab_fieldcat-seltext_l = 'Other ISSD'.
+*        tab_fieldcat-seltext_m = 'Other ISSD'.
+*        tab_fieldcat-seltext_s = 'Other ISSD'.
+
+
+      WHEN OTHERS.
+
+    ENDCASE.
+
+    tab_fieldcat-just = 'C'.
+    MODIFY tab_fieldcat.
+
+  ENDLOOP.
+
+*<-- ChaRM --
+  CLEAR tab_fieldcat.
+  tab_fieldcat-col_pos = '70'.
+  tab_fieldcat-reptext_ddic = 'Charm Change'.
+  tab_fieldcat-seltext_l = 'Charm Change'.
+  tab_fieldcat-seltext_m = 'Charm Ch.'.
+  tab_fieldcat-seltext_s = 'Change'.
+  tab_fieldcat-ddictxt = 'Change'.
+  tab_fieldcat-tabname = 'T_RESULTS'.
+  tab_fieldcat-fieldname = 'CHARM_CH'.
+  APPEND tab_fieldcat.
+*-- ChaRM -->
+
+*BEGIN OF SAGG++
+
+*Table associant un OT à son CTS PROJECT.
+  DATA : BEGIN OF t_reference OCCURS 0,
+    trkorr LIKE e070a-trkorr,
+    reference LIKE ctsproject-trkorr,
+  END OF t_reference.
+
+  CONSTANTS: c_separator(3) TYPE c VALUE ' | '.
+
+*Table associant la représentation interne d'un CTS PROJECT à sa
+*representation externe.
+  DATA : BEGIN OF t_cts_external_internal OCCURS 0,
+    internal LIKE ctsproject-trkorr,
+    external LIKE ctsproject-externalid,
+  END OF t_cts_external_internal.
+
+*Récupere le couples OT-CTS PROJECT correspondant à chaque OT de la
+*table t_result. Ces couples sont stockés dans la table t_reference.
+  IF NOT t_result[] IS INITIAL.
+    SELECT trkorr reference INTO TABLE t_reference
+    FROM e070a FOR ALL ENTRIES IN t_result
+    WHERE trkorr EQ t_result-trkorr
+    AND attribute EQ 'SAP_CTS_PROJECT'.
+
+*Pour chaque CTS PROJECT dans la table t_reference on recupere sa
+*représentation externe. Le couple CTS PROJECT externe/interne est
+*stocké dans la table t_cts_external_internal.
+    IF NOT t_reference[] IS INITIAL.
+      SELECT trkorr externalid INTO TABLE t_cts_external_internal
+      FROM ctsproject FOR ALL ENTRIES IN t_reference
+      WHERE trkorr EQ t_reference-reference.
+    ENDIF.
+
+*Dans la table t_reference on remplace la représentation interne du CTS
+*PROJECT par sa représentation externe.
+    LOOP AT t_reference.
+      LOOP AT t_cts_external_internal.
+        IF t_reference-reference EQ t_cts_external_internal-internal.
+          t_reference-reference = t_cts_external_internal-external.
+          MODIFY t_reference FROM t_reference.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+
+*On ajoute dans la table t_result la représentation externe du
+*CTS_PROJECT correspont à l'OT courrant.
+    LOOP AT t_result.
+      LOOP AT t_reference.
+        IF t_result-trkorr EQ t_reference-trkorr.
+          t_result-cts_project = t_reference-reference.
+          MODIFY t_result FROM t_result.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+
+*On vide t_reference
+    CLEAR t_reference.
+
+*Récupere le couples OT-QC NUMBER correspondant à chaque OT de la
+*table t_result. Ces couples sont stockés dans la table t_reference.
+    SELECT trkorr reference INTO TABLE t_reference
+    FROM e070a FOR ALL ENTRIES IN t_result
+    WHERE trkorr EQ t_result-trkorr
+    AND attribute EQ 'QC'.
+
+*On ajoute dans la table t_result le QC NUMBER
+*correspont à l'OT courrant.
+    LOOP AT t_result.
+      LOOP AT t_reference.
+        IF t_result-trkorr EQ t_reference-trkorr.
+          IF t_result-qc_number IS INITIAL.
+            t_result-qc_number = t_reference-reference.
+          ELSE.
+            CONCATENATE t_reference-reference t_result-qc_number INTO
+t_result-qc_number SEPARATED BY c_separator.
+          ENDIF.
+          MODIFY t_result.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+
+*On vide t_reference
+    CLEAR t_reference.
+
+*Récupere le couples OT-SP NUMBER correspondant à chaque OT de la
+*table t_result. Ces couples sont stockés dans la table t_reference.
+    SELECT trkorr reference INTO TABLE t_reference
+    FROM e070a FOR ALL ENTRIES IN t_result
+    WHERE trkorr EQ t_result-trkorr
+    AND attribute EQ 'ISSD'.
+
+*On ajoute dans la table t_result le SP NUMBER
+*correspont à l'OT courrant.
+    LOOP AT t_result.
+      LOOP AT t_reference.
+        IF t_result-trkorr EQ t_reference-trkorr.
+          IF t_result-sp_number IS INITIAL.
+            t_result-sp_number = t_reference-reference.
+          ELSE.
+            CONCATENATE t_reference-reference t_result-sp_number INTO
+t_result-sp_number SEPARATED BY c_separator.
+          ENDIF.
+          MODIFY t_result.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+
+  ENDIF.
+*END OF SAGG++
+
+* Affichage de la grille
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+   EXPORTING
+*   I_INTERFACE_CHECK                 = ' '
+*   I_BYPASSING_BUFFER                = ' '
+     i_buffer_active                   = ' '
+     i_callback_program                = str_is_variant-report
+*   I_CALLBACK_PF_STATUS_SET          = 'SET_STATUT'
+     i_callback_user_command           = 'USER_COMMAND'
+*   I_CALLBACK_TOP_OF_PAGE            = ' '
+*   I_CALLBACK_HTML_TOP_OF_PAGE       = ' '
+*   I_CALLBACK_HTML_END_OF_LIST       = ' '
+*   I_STRUCTURE_NAME                  =
+*   I_BACKGROUND_ID                   = ' '
+*   I_GRID_TITLE                      =
+     i_grid_settings                   = w_grid_settings
+     is_layout                         = is_layout
+     it_fieldcat                       = tab_fieldcat[]
+*   IT_EXCLUDING                      =
+*   IT_SPECIAL_GROUPS                 =
+*   IT_SORT                           =
+*   IT_FILTER                         =
+*   IS_SEL_HIDE                       =
+*   I_DEFAULT                         = 'X'
+     i_save                            = 'A'
+*   IS_VARIANT                        =
+     it_events                         = gt_events[]
+     it_event_exit                     = gt_events_exit[]
+*   IS_PRINT                          =
+*   IS_REPREP_ID                      =
+*   I_SCREEN_START_COLUMN             = 0
+*   I_SCREEN_START_LINE               = 0
+*   I_SCREEN_END_COLUMN               = 0
+*   I_SCREEN_END_LINE                 = 0
+*   I_HTML_HEIGHT_TOP                 = 0
+*   I_HTML_HEIGHT_END                 = 0
+*   IT_ALV_GRAPHICS                   =
+*   IT_HYPERLINK                      =
+*   IT_ADD_FIELDCAT                   =
+*   IT_EXCEPT_QINFO                   =
+*   IR_SALV_FULLSCREEN_ADAPTER        =
+* IMPORTING
+*   E_EXIT_CAUSED_BY_CALLER           =
+*   ES_EXIT_CAUSED_BY_USER            =
+    TABLES
+      t_outtab                          = t_result
+   EXCEPTIONS
+     program_error                     = 1
+     OTHERS                            = 2
+            .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  IF sy-subrc NE 0.
+*    message i398(00) with text-e03.
+    STOP.
+  ENDIF.
+
+ENDFORM.                    " f400_display_result
+
+*&--------------------------------------------------------------------*
+*&      Form  top_of_page
+*&--------------------------------------------------------------------*
+*  Affiche l'entête de la grille ALV
+*---------------------------------------------------------------------*
+FORM top_of_page.
+
+  CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+    EXPORTING
+      it_list_commentary = it_comment[].
+
+ENDFORM.                    " top_of_page
+
+*&--------------------------------------------------------------------*
+*&      Form  f350_select_user
+*&--------------------------------------------------------------------*
+*       text
+*---------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*---------------------------------------------------------------------*
+FORM f350_select_user .
+
+  DATA: l_user LIKE t_result-as4user,
+        l_name_text LIKE adrp-name_text.
+
+  SORT t_result BY as4user.
+
+  LOOP AT t_result.
+
+    IF t_result-strkorr IS INITIAL.
+      t_result-strkorr = t_result-trkorr.
+    ENDIF.
+
+    IF l_user <> t_result-as4user.
+      l_user = t_result-as4user.
+      SELECT SINGLE name_text INTO l_name_text
+      FROM usr21 INNER JOIN adrp
+      ON usr21~persnumber = adrp~persnumber
+      WHERE bname = l_user.
+      IF sy-subrc IS INITIAL.
+        t_result-name_text = l_name_text.
+      ENDIF.
+    ELSE.
+      t_result-name_text = l_name_text.
+    ENDIF.
+    MODIFY t_result.
+  ENDLOOP.
+
+  SORT t_result BY strkorr trkorr ASCENDING.
+
+  LOOP AT t_result.
+    IF t_result-trkorr = t_result-strkorr.
+      CLEAR t_result-strkorr.
+    ELSE.
+      w_strkorr = t_result-strkorr.
+      t_result-strkorr = t_result-trkorr.
+      t_result-trkorr = w_strkorr.
+    ENDIF.
+    MODIFY t_result.
+  ENDLOOP.
+
+
+ENDFORM.                    " f350_select_user
+
+*&---------------------------------------------------------------------
+*&      Form  READ_OBJECT_TABLE
+*&---------------------------------------------------------------------
+FORM read_object_table    TABLES pt_object_texts STRUCTURE ko100.
+  DATA: lv_lines       TYPE i.
+
+  DESCRIBE TABLE pt_object_texts LINES lv_lines.
+  IF lv_lines < 1.
+    CALL FUNCTION 'TR_OBJECT_TABLE'
+      TABLES
+        wt_object_text = pt_object_texts.
+
+    DELETE pt_object_texts WHERE pgmid <> 'R3TR'
+                             AND pgmid <> 'R3OB'
+                             AND pgmid <> 'LIMU'
+                             AND pgmid <> 'CORR'.
+
+    SORT pt_object_texts BY pgmid object.
+  ENDIF.
+
+ENDFORM.                               " READ_OBJECT_TABLE
+
+*<-- Begin V2.2 --
+*&--------------------------------------------------------------------
+*&      Form  f290_add_option
+*&--------------------------------------------------------------------
+*  Additional option form
+*---------------------------------------------------------------------
+FORM f290_add_option.
+  r_order_noaddopt[] = r_order[].
+
+* Get TR linked to object of TR in selection screen
+  IF p_lktr = 'X' AND NOT r_order IS INITIAL.
+    PERFORM get_linked_tr.
+  ENDIF.
+
+
+ENDFORM.                    " f290_add_option
+
+*&--------------------------------------------------------------------
+*&      Form  GET_LINKED_TR
+*&--------------------------------------------------------------------
+*  Get TR linked to object of TR in selection screen
+*---------------------------------------------------------------------
+FORM get_linked_tr .
+
+  TYPES: BEGIN OF ty_obj,
+          object   TYPE e071-object,
+          obj_name TYPE e071-obj_name,
+         END OF ty_obj.
+
+  DATA: lt_obj               TYPE TABLE OF ty_obj,
+        lt_version_list      TYPE TABLE OF vrsd,
+        lt_version_list_full TYPE TABLE OF vrsd,
+        lt_lversnodummy      TYPE TABLE OF  vrsn,
+        lw_obj_name          TYPE vrsd-objname.
+
+  FIELD-SYMBOLS: <lwa_obj> LIKE LINE OF lt_obj,
+                 <lwa_vers> LIKE LINE OF lt_version_list.
+
+  SELECT object obj_name INTO TABLE lt_obj FROM e071
+   WHERE trkorr IN r_order
+     AND object IN s_lktrob.
+
+  IF sy-subrc IS INITIAL.
+    LOOP AT lt_obj ASSIGNING <lwa_obj>.
+*     Get version management of object.
+      lw_obj_name = <lwa_obj>-obj_name.
+      CLEAR lt_version_list.
+      CALL FUNCTION 'SVRS_GET_VERSION_DIRECTORY_46'
+        EXPORTING
+*         DESTINATION            = ' '
+          objname                = lw_obj_name
+          objtype                = <lwa_obj>-object
+        TABLES
+          lversno_list           = lt_lversnodummy
+          version_list           = lt_version_list
+        EXCEPTIONS
+          no_entry               = 1
+          communication_failure_ = 2
+          system_failure         = 3
+          OTHERS                 = 4.
+      IF sy-subrc = 0.
+        APPEND LINES OF lt_version_list TO lt_version_list_full.
+      ENDIF.
+    ENDLOOP.
+    IF NOT lt_version_list_full IS INITIAL.
+      SORT lt_version_list_full BY korrnum.
+      DELETE ADJACENT DUPLICATES FROM lt_version_list_full
+                            COMPARING korrnum.
+      CLEAR : r_order.
+      r_order-sign = 'I'.
+      r_order-option = 'EQ'.
+      LOOP AT lt_version_list_full ASSIGNING <lwa_vers>
+                                   WHERE NOT korrnum IS INITIAL.
+        CLEAR r_order-low.
+        r_order-low = <lwa_vers>-korrnum.
+        APPEND r_order.
+      ENDLOOP.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.                    " GET_LINKED_TR
+*--  End V2.2 -->
+
+*&-----------------------------------------------------------------*
+*&      Form  read_ztr_texts
+*&-----------------------------------------------------------------*
+*       text
+*------------------------------------------------------------------*
+
+FORM read_ztr_texts_result.
+
+  DATA: lt_stxh LIKE stxh OCCURS 0 WITH HEADER LINE.
+  DATA: BEGIN OF lt_temp OCCURS 0,
+          tdname LIKE stxh-tdname.
+  DATA: END OF lt_temp.
+
+  FIELD-SYMBOLS : <fs_result> LIKE LINE OF t_result.
+  UNASSIGN <fs_result>.
+
+* Check if transport order selected
+  CHECK NOT t_result[] IS INITIAL.
+
+
+  LOOP AT t_result.
+    lt_temp-tdname = t_result-trkorr.
+    APPEND lt_temp.
+  ENDLOOP.
+
+* Check for which entry a text exists;
+
+  SELECT * FROM stxh INTO TABLE lt_stxh
+  FOR ALL ENTRIES IN lt_temp
+  WHERE tdspras  = sy-langu AND
+        tdobject = 'ZTR' AND
+        tdname   = lt_temp-tdname.
+
+  CHECK NOT lt_stxh[] IS INITIAL.
+
+* Read texts only for transport orders with at least one text
+  LOOP AT t_result ASSIGNING <fs_result>.
+
+    READ TABLE lt_stxh WITH KEY tdname = <fs_result>-trkorr.
+
+    CHECK sy-subrc IS INITIAL.
+* Text Edit 1
+*--> init fields header
+    w_header-tdid     = 'ZCOM'.
+    w_header-tdname   = <fs_result>-trkorr.
+    w_header-tdspras  = sy-langu.
+    w_header-tdobject = 'ZTR'.
+
+*
+    CALL FUNCTION 'READ_TEXT'
+      EXPORTING
+        id                      = w_header-tdid
+        language                = w_header-tdspras
+        name                    = w_header-tdname
+        object                  = w_header-tdobject
+      IMPORTING
+        header                  = w_header
+      TABLES
+        lines                   = wt_lines
+      EXCEPTIONS
+        id                      = 1
+        language                = 2
+        name                    = 3
+        not_found               = 4
+        object                  = 5
+        reference_check         = 6
+        wrong_access_to_archive = 7
+        OTHERS                  = 8.
+*
+*
+    IF sy-subrc = 0.
+      LOOP AT wt_lines.
+        CONCATENATE <fs_result>-zcom wt_lines-tdline
+                 INTO <fs_result>-zcom SEPARATED BY space.
+        EXIT.
+      ENDLOOP.
+    ENDIF.
+
+  ENDLOOP.
+ENDFORM.                    " read_ztr_texts_result
+
+
+*<-- ChaRM --
+*&--------------------------------------------------------------------
+*&      Form  GET_TR_FROM_CHARM_CHANGE
+*&--------------------------------------------------------------------
+*  Get TR from Charm system (PSM)
+*---------------------------------------------------------------------
+FORM get_tr_from_charm_change.
+
+
+  DATA:
+  lt_where   TYPE TABLE OF rfc_db_opt,
+  lw_where   LIKE LINE OF lt_where,
+  lt_fields  TYPE TABLE OF rfc_db_fld,
+  lw_fields  LIKE LINE OF lt_fields,
+  lt_ot      TYPE TABLE OF ty_ot,
+  lwa_ot     LIKE LINE OF lt_ot.
+
+
+*** WHERE condition from change number.
+  CHECK NOT s_charm[] IS INITIAL.
+
+  CONCATENATE c_fielname_trordhc-charm_change ' in (' INTO lw_where.
+  APPEND lw_where TO lt_where.
+  LOOP AT s_charm.
+    CLEAR w_charm_ch.
+    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+      EXPORTING
+        input  = s_charm-low
+      IMPORTING
+        output = w_charm_ch.
+
+    AT LAST."Pas de virgule mais ')'.
+      CONCATENATE '''' w_charm_ch ''')' INTO lw_where.
+      APPEND lw_where TO lt_where.
+      EXIT.
+    ENDAT.
+
+    CONCATENATE '''' w_charm_ch ''',' INTO lw_where.
+    APPEND lw_where TO lt_where.
+
+  ENDLOOP.
+
+
+*Fields needed.
+  lw_fields = c_fielname_trordhc-charm_change.
+  APPEND lw_fields TO lt_fields.
+  lw_fields = c_fielname_trordhc-order.
+  APPEND lw_fields TO lt_fields.
+
+
+*Call request in PSM system.
+  CALL FUNCTION 'RFC_READ_TABLE' DESTINATION c_charm_rfc_dest
+    EXPORTING
+      query_table           = '/TMWFLOW/TRORDHC'
+*     DELIMITER             = ' '
+*     NO_DATA               = ' '
+*     ROWSKIPS              = 0
+*     ROWCOUNT              = 0
+    TABLES
+      options               = lt_where
+      fields                = lt_fields
+      data                  = lt_ot
+    EXCEPTIONS
+      table_not_available   = 1
+      table_without_data    = 2
+      option_not_valid      = 3
+      field_not_valid       = 4
+      not_authorized        = 5
+      data_buffer_exceeded  = 6
+      system_failure        = 7
+      communication_failure = 8
+      resource_failure      = 9
+      OTHERS                = 10.
+
+  IF sy-subrc <> 0.
+    w_charm_conex_failed = sy-subrc.
+    MESSAGE i001(00) WITH
+ 'Error in communication change number was empty' '' '' ''.
+
+  ELSE.
+    CLEAR w_charm_conex_failed.
+    LOOP AT lt_ot INTO lwa_ot.
+      r_order-sign = 'I'.
+      r_order-option = 'EQ'.
+      r_order-low = lwa_ot-trorder_number.
+      APPEND r_order.
+    ENDLOOP.
+    IF sy-subrc <> 0.
+      MESSAGE i001(00) WITH
+      'No TR selected via change no if change no empty' '' '' ''.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.                    "get_tr_from_charm_change
+
+*&---------------------------------------------------------------------
+*
+*&      Form  GET_CHARM_CHANGE_FROM_TR
+*&---------------------------------------------------------------------
+*
+*  Get Charm change (in PSM) from TR number
+*  Get external CR number stock in ChaRM at the same time
+*----------------------------------------------------------------------
+*
+FORM get_charm_change_from_tr.
+
+  DATA:
+  lt_where   TYPE TABLE OF rfc_db_opt,
+  lw_where   LIKE LINE OF lt_where,
+  lt_fields  TYPE TABLE OF rfc_db_fld,
+  lw_fields  LIKE LINE OF lt_fields,
+  lt_ot      TYPE ty_t_ot,
+  lwa_ot     LIKE LINE OF lt_ot,
+  lt_cr_ext  TYPE ty_t_cr_ext,
+  lwa_cr_ext LIKE LINE OF lt_cr_ext.
+
+  DATA: lw_from TYPE i,
+        lw_to   TYPE i,
+        lw_inc  TYPE i VALUE 900.
+*** WHERE condition.
+  CHECK NOT t_e070v[]  IS INITIAL.
+
+*Fields needed.
+  lw_fields = c_fielname_trordhc-charm_change.
+  APPEND lw_fields TO lt_fields.
+  lw_fields = c_fielname_trordhc-order.
+  APPEND lw_fields TO lt_fields.
+
+* Made sélection by packet of 900 TR.
+  DATA : l46_nbline TYPE i.
+  DESCRIBE TABLE t_e070v LINES l46_nbline.
+  WHILE lw_to < l46_nbline.
+    CLEAR: lw_where, lt_where.
+    lw_from = lw_to + 1.
+    lw_to = lw_from + lw_inc.
+
+    CONCATENATE c_fielname_trordhc-order ' in (' INTO lw_where.
+    APPEND lw_where TO lt_where.
+
+    LOOP AT t_e070v ASSIGNING <fs_e070v> FROM lw_from TO lw_to.
+
+      AT LAST."Pas de virgule mais ')'.
+        CONCATENATE '''' <fs_e070v>-trkorr ''')' INTO lw_where.
+        APPEND lw_where TO lt_where.
+        EXIT.
+      ENDAT.
+
+      IF sy-tabix = lw_to. "Pas de virgule mais ')'.
+        CONCATENATE '''' <fs_e070v>-trkorr ''')' INTO lw_where.
+        APPEND lw_where TO lt_where.
+      ELSE.
+        CONCATENATE '''' <fs_e070v>-trkorr ''',' INTO lw_where.
+        APPEND lw_where TO lt_where.
+      ENDIF.
+
+    ENDLOOP.
+
+*Call request in PSM system.
+    CALL FUNCTION 'RFC_READ_TABLE' DESTINATION c_charm_rfc_dest
+      EXPORTING
+        query_table           = '/TMWFLOW/TRORDHC'
+*       DELIMITER             = ' '
+*       NO_DATA               = ' '
+*       ROWSKIPS              = 0
+*       ROWCOUNT              = 0
+      TABLES
+        options               = lt_where
+        fields                = lt_fields
+        data                  = lt_ot
+      EXCEPTIONS
+        table_not_available   = 1
+        table_without_data    = 2
+        option_not_valid      = 3
+        field_not_valid       = 4
+        not_authorized        = 5
+        data_buffer_exceeded  = 6
+        system_failure        = 7
+        communication_failure = 8
+        resource_failure      = 9
+        OTHERS                = 10.
+
+    IF sy-subrc <> 0.
+      w_charm_conex_failed = sy-subrc.
+
+    ELSE.
+*     Get CR extern from change in table lt_cr_ext
+      PERFORM get_cr_extern_from_change USING lt_ot
+                                     CHANGING lt_cr_ext.
+
+
+      CLEAR w_charm_conex_failed.
+      LOOP AT t_e070v ASSIGNING <fs_e070v> FROM lw_from TO lw_to.
+        READ TABLE lt_ot INTO lwa_ot WITH KEY trorder_number =
+<fs_e070v>-trkorr.
+        IF sy-subrc IS INITIAL.
+          <fs_e070v>-charm_ch = lwa_ot-originator_key.
+
+*          Get CR extern from change
+          READ TABLE lt_cr_ext INTO lwa_cr_ext WITH KEY object_id =
+  <fs_e070v>-charm_ch.
+          IF sy-subrc IS INITIAL.
+            <fs_e070v>-qc_number = lwa_cr_ext-zz_extern_cr.
+          ENDIF.
+        ENDIF.
+
+      ENDLOOP.
+    ENDIF.
+  ENDWHILE.
+ENDFORM.                    "get_charm_change_from_tr
+
+*&---------------------------------------------------------------------
+*
+*&      Form  GET_CR_EXTERN_FROM_CHANGE
+*&---------------------------------------------------------------------
+*
+*   Get CR extern from change from table CRMD_ORDERADM_H
+*----------------------------------------------------------------------
+*
+*      -->PT_OT  List of change
+*----------------------------------------------------------------------
+*
+FORM get_cr_extern_from_change  USING pt_ot     TYPE ty_t_ot
+                             CHANGING pt_cr_ext TYPE ty_t_cr_ext.
+
+  DATA:
+  lt_where   TYPE TABLE OF rfc_db_opt,
+  lw_where   LIKE LINE OF lt_where,
+  lt_fields  TYPE TABLE OF rfc_db_fld,
+  lw_fields  LIKE LINE OF lt_fields.
+
+  FIELD-SYMBOLS: <lwa_ot> LIKE LINE OF pt_ot.
+
+
+* Selected fields
+  CLEAR  lt_fields.
+  lw_fields = c_fielname_crmd_orderadm_h-charm_change.
+  APPEND lw_fields TO lt_fields.
+  lw_fields = c_fielname_crmd_orderadm_h-extern_cr.
+  APPEND lw_fields TO lt_fields.
+
+* Where clause
+  CONCATENATE c_fielname_crmd_orderadm_h-charm_change ' in (' INTO
+lw_where.
+  APPEND lw_where TO lt_where.
+
+  CHECK NOT pt_ot IS INITIAL.
+  LOOP AT pt_ot ASSIGNING <lwa_ot>.
+
+    AT LAST."Pas de virgule mais ')'.
+      CONCATENATE '''' <lwa_ot>-originator_key ''')' INTO lw_where.
+      APPEND lw_where TO lt_where.
+      EXIT.
+    ENDAT.
+
+    CONCATENATE '''' <lwa_ot>-originator_key ''',' INTO lw_where.
+    APPEND lw_where TO lt_where.
+
+  ENDLOOP.
+
+  CALL FUNCTION 'RFC_READ_TABLE' DESTINATION c_charm_rfc_dest
+    EXPORTING
+      query_table           = 'CRMD_ORDERADM_H'
+*     DELIMITER             = ' '
+*     NO_DATA               = ' '
+*     ROWSKIPS              = 0
+*     ROWCOUNT              = 0
+    TABLES
+      options               = lt_where
+      fields                = lt_fields
+      data                  = pt_cr_ext
+    EXCEPTIONS
+      table_not_available   = 1
+      table_without_data    = 2
+      option_not_valid      = 3
+      field_not_valid       = 4
+      not_authorized        = 5
+      data_buffer_exceeded  = 6
+      system_failure        = 7
+      communication_failure = 8
+      resource_failure      = 9
+      OTHERS                = 10.
+  IF sy-subrc <> 0.
+    w_charm_conex_failed = sy-subrc.
+  ENDIF.
+
+ENDFORM.                    " GET_CR_EXTERN_FROM_CHANGE
+
+*&---------------------------------------------------------------------*
+*&      Form  user_command
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_UCOMM    text
+*      -->P_SELFIELD text
+*----------------------------------------------------------------------*
+FORM user_command USING p_ucomm    TYPE syucomm
+                        p_selfield TYPE slis_selfield.
+
+  CONSTANTS c_field_order  TYPE slis_fieldname VALUE 'TRKORR'.
+
+  CASE p_selfield-fieldname.
+
+*   Order
+    WHEN c_field_order.
+      PERFORM show_order USING p_selfield-value.
+
+  ENDCASE.
+
+  CASE p_ucomm.
+    WHEN '&REFRESH'.
+*      add code. "Submit the same program?
+* Change PF Status (Bar buttons ?)
+
+  ENDCASE.
+
+ENDFORM.                 " USER_COMMAND
+
+*&---------------------------------------------------------------------*
+*&      Form  get_content
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->PS_LINE    text
+*----------------------------------------------------------------------*
+FORM show_order USING ps_order TYPE slis_entry.
+
+  DATA ls_bdcdata TYPE bdcdata.
+
+  DATA lt_bdcdata       TYPE bdcdata_tab.
+
+  CLEAR lt_bdcdata.
+
+  CLEAR ls_bdcdata.
+  ls_bdcdata-dynbegin = 'T'.
+  ls_bdcdata-fnam     = 'SE10'.
+  APPEND ls_bdcdata TO lt_bdcdata.
+
+  CLEAR ls_bdcdata.
+  ls_bdcdata-program  = 'RDDM0001'.
+  ls_bdcdata-dynpro   = '0100'.
+  ls_bdcdata-dynbegin = 'X'.
+  APPEND ls_bdcdata TO lt_bdcdata.
+
+  CLEAR ls_bdcdata.
+  ls_bdcdata-fnam     = 'BDC_OKCODE'.
+  ls_bdcdata-fval     = '=SNGL'.
+  APPEND ls_bdcdata TO lt_bdcdata.
+
+  CLEAR ls_bdcdata.
+  ls_bdcdata-program  = 'SAPLSTRH'.
+  ls_bdcdata-dynpro   = '1200'.
+  ls_bdcdata-dynbegin = 'X'.
+  APPEND ls_bdcdata TO lt_bdcdata.
+
+  CLEAR ls_bdcdata.
+  ls_bdcdata-fnam     = 'BDC_CURSOR'.
+  ls_bdcdata-fval     = 'GV_1200_TRKORR'.
+  APPEND ls_bdcdata TO lt_bdcdata.
+
+  CLEAR ls_bdcdata.
+  ls_bdcdata-fnam     = 'BDC_OKCODE'.
+  ls_bdcdata-fval     = '=TAKE'.
+  APPEND ls_bdcdata TO lt_bdcdata.
+
+  CLEAR ls_bdcdata.
+  ls_bdcdata-fnam     = 'GV_1200_TRKORR'.
+  ls_bdcdata-fval     = ps_order.
+  APPEND ls_bdcdata TO lt_bdcdata.
+
+* Display the function module
+  CALL TRANSACTION 'SE10' USING lt_bdcdata MODE 'E'.
+
+
+ENDFORM.                    "get_content
