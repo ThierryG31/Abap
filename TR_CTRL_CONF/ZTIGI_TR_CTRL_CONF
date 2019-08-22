@@ -89,9 +89,6 @@ START-OF-SELECTION.
 *----------------------------
   PERFORM f300_select_additional_data.
 
-*  break to42718.
-
-
 *-------------------- User name selection
   PERFORM f350_select_user.
 
